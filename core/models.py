@@ -1,0 +1,109 @@
+from django.db import models
+from django.contrib.auth.models import AbstractUser
+
+# ---------------------------------------------------------
+# 1. KULLANICI MODELİ (CustomUser)
+# ---------------------------------------------------------
+class CustomUser(AbstractUser):
+    # Roller
+    ROLE_CHOICES = (
+        ('employee', 'Çalışan'),
+        ('manager', 'Ekip Yöneticisi'),
+    )
+    # Ekipler (Örnek olarak sabit eklendi, istenirse ayrı tablo yapılabilir)
+    TEAM_CHOICES = (
+        ('team1', 'Yazılım Geliştirme Ekibi'),
+        ('team2', 'Test ve Kalite Ekibi'),
+        ('team3', 'DevOps Ekibi'),
+    )
+
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='employee', verbose_name='Rolü')
+    title = models.CharField(max_length=100, verbose_name='Unvan / Sicil Bilgisi', blank=True)
+    team = models.CharField(max_length=50, choices=TEAM_CHOICES, verbose_name='Ekip', blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.first_name} {self.last_name} ({self.username})"
+
+    class Meta:
+        verbose_name = 'Kullanıcı'
+        verbose_name_plural = 'Kullanıcılar'
+
+
+# ---------------------------------------------------------
+# 2. GÖREV MODELİ (Task)
+# ---------------------------------------------------------
+class Task(models.Model):
+    # Seçenekler (Dropdownlar)
+    PRIORITY_CHOICES = (
+        ('yuksek', 'Yüksek'),
+        ('orta', 'Orta'),
+        ('dusuk', 'Düşük'),
+    )
+    STATUS_CHOICES = (
+        ('baslanmadi', 'Başlanmadı'),
+        ('calisiliyor', 'Üzerinde Çalışılıyor'),
+        ('duraklatildi', 'Duraklatıldı'),
+        ('tamamlandi', 'Tamamlandı'),
+        ('iptal', 'İptal Edildi'),
+    )
+    SIZE_CHOICES = (
+        (1, '1 - En Düşük'),
+        (2, '2 - Düşük'),
+        (3, '3 - Orta'),
+        (4, '4 - Yüksek'),
+        (5, '5 - En Yüksek'),
+    )
+
+    # Temel Bilgiler
+    title = models.CharField(max_length=200, verbose_name='İş Tanımı')
+    description = models.TextField(verbose_name='Detaylı Açıklama', blank=True)
+    
+    # Parametreler
+    priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, verbose_name='Öncelik')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='baslanmadi', verbose_name='İşin Durumu')
+    size = models.IntegerField(choices=SIZE_CHOICES, verbose_name='İş Büyüklüğü (1-5)')
+    
+    # Tarih Bilgileri
+    start_date = models.DateField(verbose_name='Başlangıç Tarihi')
+    due_date = models.DateField(verbose_name='Tamamlanma Tarihi')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Oluşturulma Zamanı')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='Son Güncelleme')
+
+    # İlişkiler (Kullanıcı Bağlantıları)
+    created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='created_tasks', verbose_name='Oluşturan Yönetici')
+    assigned_to = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='assigned_tasks', verbose_name='Atanan Çalışan')
+    
+    # Many-to-Many İlişkiler
+    partners = models.ManyToManyField(CustomUser, related_name='partner_tasks', blank=True, verbose_name='İş Ortakları')
+    informees = models.ManyToManyField(CustomUser, related_name='informed_tasks', blank=True, verbose_name='Bilgilendirilecek Kişiler')
+
+    # Metrikler
+    planned_hours = models.DecimalField(max_digits=6, decimal_places=2, verbose_name='Planlanan Süre (Saat)')
+    spent_hours = models.DecimalField(max_digits=6, decimal_places=2, default=0, verbose_name='Harcanan Süre (Saat)')
+
+    def __str__(self):
+        return f"{self.title} - {self.get_status_display()}"
+
+    class Meta:
+        verbose_name = 'Görev'
+        verbose_name_plural = 'Görevler'
+        ordering = ['-created_at'] # En yeni görev en üstte
+
+
+# ---------------------------------------------------------
+# 3. YOL HARİTASI MODELİ (RoadmapItem)
+# ---------------------------------------------------------
+class RoadmapItem(models.Model):
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='roadmap', verbose_name='Bağlı Görev')
+    order = models.PositiveIntegerField(default=1, verbose_name='Sıra No')
+    description = models.CharField(max_length=300, verbose_name='Adım Açıklaması')
+    is_completed = models.BooleanField(default=False, verbose_name='Tamamlandı mı?')
+    estimated_duration = models.DecimalField(max_digits=5, decimal_places=2, blank=True, null=True, verbose_name='Tahmini Süre (Saat)')
+
+    def __str__(self):
+        return f"{self.order}. {self.description}"
+
+    class Meta:
+        ordering = ['order']
+        verbose_name = 'Yol Haritası Adımı'
+        verbose_name_plural = 'Yol Haritası Adımları'
