@@ -10,7 +10,7 @@
     </div>
     <div class="col-md-6 text-end">
         <!-- Yönetici Admin paneline gidip görev ekleyebilsin -->
-        <a href="/admin/core/task/add/" class="btn btn-success">
+        <a href="{% url 'create_task' %}" class="btn btn-success">
             <i class="fas fa-plus-circle"></i> Yeni Görev Ata
         </a>
         <a href="/admin/" class="btn btn-outline-dark ms-2" target="_blank">
@@ -39,7 +39,7 @@
                     <td>{{ task.title }}</td>
                     <td>{{ task.get_priority_display }}</td>
                     <td>{{ task.get_status_display }}</td>
-                    <td><a href="/admin/core/task/{{ task.id }}/change/" class="btn btn-sm btn-outline-secondary">Düzenle</a></td>
+                    <td><a href="{% url 'task_detail' task.pk %}" class="btn btn-sm btn-outline-secondary">Düzenle</a></td>
                 </tr>
                 {% empty %}
                 <tr><td colspan="5" class="text-center py-4">Henüz hiç görev oluşturulmamış.</td></tr>

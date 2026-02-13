@@ -9,7 +9,7 @@
         <p class="text-muted">Size atanan işlerin listesi ve durumları.</p>
     </div>
     <div class="col-md-4 text-end">
-        <button class="btn btn-secondary disabled" title="Çalışanlar sadece yönetici atamasıyla iş alır (Kurgu gereği)">
+        <a href="{% url 'create_task' %}" class="btn btn-primary"><i class="fas fa-plus-circle"></i> Yeni Görev Oluştur</a>
             <i class="fas fa-info-circle"></i> Yeni Görev Talebi
         </button>
     </div>
@@ -43,7 +43,7 @@
                         </td>
                         <td>{{ task.due_date|date:"d M Y" }}</td>
                         <td><span class="badge bg-secondary">{{ task.get_status_display }}</span></td>
-                        <td><a href="#" class="btn btn-sm btn-outline-primary">Detay</a></td>
+                        <td><a href="{% url 'task_detail' task.pk %}" class="btn btn-sm btn-outline-primary">Detay</a></td>
                     </tr>
                     {% empty %}
                     <tr>

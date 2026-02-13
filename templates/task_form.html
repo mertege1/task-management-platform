@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-plus-circle me-2"></i>{{ page_title }}</h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <!-- Hata Mesajları -->
+                    {% if form.errors %}
+                        <div class="alert alert-danger">
+                            Lütfen formdaki hataları düzeltin.
+                            {{ form.non_field_errors }}
+                            <!-- Hangi alanlarda hata olduğunu görmek için geçici olarak açabilirsin -->
+                            <!-- {{ form.errors }} --> 
+                        </div>
+                    {% endif %}
+
+                    <!-- Form Alanları -->
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">İş Tanımı (Başlık)*</label>
+                            {{ form.title }}
+                            <div class="text-danger small">{{ form.title.errors }}</div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">Atanan Kişi*</label>
+                            {{ form.assigned_to }}
+                            {% if user.role == 'employee' %}
+                            <small class="text-muted">Çalışanlar sadece kendilerine görev oluşturabilir.</small>
+                            {% endif %}
+                            <div class="text-danger small">{{ form.assigned_to.errors }}</div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Öncelik*</label>
+                            {{ form.priority }}
+                            <div class="text-danger small">{{ form.priority.errors }}</div>
+                        </div>
+                        
+                        <!-- YENİ EKLENENLER: Durum Alanı -->
+                        <div class="col-md-6">
+                            <label class="form-label">İşin Durumu*</label>
+                            {{ form.status }}
+                            <div class="text-danger small">{{ form.status.errors }}</div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">İş Büyüklüğü (1-5)*</label>
+                            {{ form.size }}
+                            <div class="text-danger small">{{ form.size.errors }}</div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Başlangıç Tarihi*</label>
+                            {{ form.start_date }}
+                            <div class="text-danger small">{{ form.start_date.errors }}</div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Tamamlanma Tarihi*</label>
+                            {{ form.due_date }}
+                            <div class="text-danger small">{{ form.due_date.errors }}</div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Planlanan Süre (Saat)*</label>
+                            {{ form.planned_hours }}
+                            <div class="text-danger small">{{ form.planned_hours.errors }}</div>
+                        </div>
+
+                        <!-- YENİ EKLENENLER: Harcanan Süre -->
+                        <div class="col-md-6">
+                            <label class="form-label">Harcanan Süre (Saat)</label>
+                            {{ form.spent_hours }}
+                            <div class="text-danger small">{{ form.spent_hours.errors }}</div>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label">Detaylı Açıklama</label>
+                            {{ form.description }}
+                            <div class="text-danger small">{{ form.description.errors }}</div>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label">Yol Haritası (Taslak)</label>
+                            {{ form.roadmap_summary }}
+                            <small class="text-muted">Her satıra bir adım yazınız.</small>
+                            <div class="text-danger small">{{ form.roadmap_summary.errors }}</div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">İş Ortakları (Ctrl ile çoklu seçim)</label>
+                            {{ form.partners }}
+                            <div class="text-danger small">{{ form.partners.errors }}</div>
+                        </div>
+                         <div class="col-md-6">
+                            <label class="form-label">Bilgilendirilecekler</label>
+                            {{ form.informees }}
+                            <div class="text-danger small">{{ form.informees.errors }}</div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-save me-2"></i>Görevi Kaydet
+                        </button>
+                        <a href="{% url 'home' %}" class="btn btn-light">İptal</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

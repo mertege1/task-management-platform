@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- SOL KOLON: Görev Bilgileri -->
+    <div class="col-md-8">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+                <h4 class="mb-0 text-primary"><i class="fas fa-tasks me-2"></i>{{ task.title }}</h4>
+                <div>
+                    <span class="badge bg-{{ task.priority|yesno:'danger,warning,success' }} p-2">{{ task.get_priority_display }} Öncelik</span>
+                    <span class="badge bg-secondary p-2 ms-1">{{ task.get_status_display }}</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <h6 class="text-muted text-uppercase small">Açıklama</h6>
+                <p class="lead fs-6">{{ task.description|linebreaks }}</p>
+
+                <hr>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <small class="text-muted d-block">Atanan Kişi</small>
+                        <!-- DÜZELTME: İsim yoksa kullanıcı adını göster -->
+                        <strong><i class="fas fa-user me-1"></i> {{ task.assigned_to.get_full_name|default:task.assigned_to.username }}</strong>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted d-block">Oluşturan Yönetici</small>
+                        <!-- DÜZELTME: İsim yoksa kullanıcı adını göster -->
+                        <strong>{{ task.created_by.get_full_name|default:task.created_by.username }}</strong>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted d-block">Başlangıç Tarihi</small>
+                        <span><i class="far fa-calendar-alt me-1"></i> {{ task.start_date }}</span>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted d-block">Bitiş Tarihi</small>
+                        <span class="{% if task.due_date < today %}text-danger fw-bold{% endif %}">
+                            <i class="far fa-calendar-check me-1"></i> {{ task.due_date }}
+                        </span>
+                    </div>
+                </div>
+
+                <hr>
+                
+                <h6 class="text-muted text-uppercase small mt-3">İş Ortakları & Bilgilendirilecekler</h6>
+                <div class="mb-3">
+                    {% for partner in task.partners.all %}
+                        <!-- DÜZELTME: İsim yoksa kullanıcı adını göster -->
+                        <span class="badge rounded-pill bg-light text-dark border"><i class="fas fa-user-friends me-1"></i> {{ partner.get_full_name|default:partner.username }}</span>
+                    {% empty %}
+                        <small class="text-muted fst-italic">İş ortağı yok.</small>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="card-footer bg-light">
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'home' %}" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i> Geri Dön</a>
+                    
+                    <!-- Sadece yetkili kişiler düzenleyebilir -->
+                    {% if user.role == 'manager' or user == task.assigned_to %}
+                        <a href="{% url 'update_task' task.pk %}" class="btn btn-warning">
+                            <i class="fas fa-edit me-1"></i> Görevi Düzenle / Durum Güncelle
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SAĞ KOLON: Metrikler ve Yol Haritası -->
+    <div class="col-md-4">
+        <!-- Süre Kartı -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-success text-white">
+                <h6 class="mb-0"><i class="fas fa-clock me-2"></i>Zaman Takibi</h6>
+            </div>
+            <div class="card-body text-center">
+                <div class="row">
+                    <div class="col-6 border-end">
+                        <h3 class="fw-bold">{{ task.planned_hours }}</h3>
+                        <small class="text-muted">Planlanan (Saat)</small>
+                    </div>
+                    <div class="col-6">
+                        <h3 class="fw-bold {% if task.spent_hours > task.planned_hours %}text-danger{% else %}text-success{% endif %}">
+                            {{ task.spent_hours }}
+                        </h3>
+                        <small class="text-muted">Harcanan (Saat)</small>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <div class="progress" style="height: 10px;">
+                        <!-- Basit bir yüzde hesabı (Template'de matematik zor olduğu için tahmini genişlik veriyoruz veya JS ile yapılabilir) -->
+                        <div class="progress-bar bg-success" role="progressbar" style="width: 50%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Yol Haritası Kartı -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0"><i class="fas fa-route me-2"></i>Yol Haritası</h6>
+            </div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush">
+                    {% for item in task.roadmap.all %}
+                        <li class="list-group-item d-flex align-items-start">
+                            <div class="me-2 mt-1">
+                                <i class="fas fa-check-circle {% if item.is_completed %}text-success{% else %}text-muted{% endif %}"></i>
+                            </div>
+                            <div>
+                                <small class="fw-bold">Adım {{ item.order }}</small>
+                                <p class="mb-0 small text-muted">{{ item.description }}</p>
+                            </div>
+                        </li>
+                    {% empty %}
+                        <li class="list-group-item text-center text-muted py-3">
+                            Yol haritası adımları henüz girilmemiş.
+                            <br>
+                            <small>Düzenleme ekranından ekleyebilirsiniz.</small>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
