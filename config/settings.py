@@ -55,7 +55,7 @@ ROOT_URLCONF = "config.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / 'templates'],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -119,3 +119,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Özel Kullanıcı Modeli Tanımlaması
 AUTH_USER_MODEL = 'core.CustomUser'
+
+# Giriş/Çıkış Ayarları
+LOGIN_REDIRECT_URL = 'home'  # Giriş yapınca ana sayfaya git
+LOGOUT_REDIRECT_URL = 'login' # Çıkış yapınca giriş ekranına dön

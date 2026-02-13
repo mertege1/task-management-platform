@@ -29,4 +29,8 @@ class TaskAdmin(admin.ModelAdmin):
 # Modelleri kaydet
 admin.site.register(CustomUser, CustomUserAdmin)
 admin.site.register(Task, TaskAdmin)
-# RoadmapItem'i ayrı kaydetmeye gerek yok, Task içinde görünecek
+
+# 4. Admin Paneli Görsel Özelleştirmeleri (BURAYI EKLİYORUZ)
+admin.site.site_header = "İş Yönetim Platformu"      # Sol üstteki mavi başlık (Django administration yerine)
+admin.site.site_title = "İş Takip Admin Paneli"      # Tarayıcı sekmesinde görünen başlık
+admin.site.index_title = "Yönetim Merkezi"           # Sayfanın ortasındaki başlık (Site administration yerine)
