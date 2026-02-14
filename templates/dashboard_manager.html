@@ -6,46 +6,308 @@
 <div class="row mb-4">
     <div class="col-md-6">
         <h2><i class="fas fa-chart-line text-danger"></i> Ekip Yönetimi</h2>
-        <p class="text-muted">Ekibinizin performansını ve görevlerini yönetin.</p>
+        <p class="text-muted">Ekip performansı, iş yükü analizi ve görev takibi.</p>
     </div>
     <div class="col-md-6 text-end">
-        <!-- Yönetici Admin paneline gidip görev ekleyebilsin -->
-        <a href="{% url 'create_task' %}" class="btn btn-success">
+        <a href="{% url 'create_task' %}" class="btn btn-success shadow-sm">
             <i class="fas fa-plus-circle"></i> Yeni Görev Ata
         </a>
-        <a href="/admin/" class="btn btn-outline-dark ms-2" target="_blank">
+        <a href="/admin/" class="btn btn-outline-dark ms-2 shadow-sm" target="_blank">
             <i class="fas fa-cog"></i> Admin Paneli
         </a>
     </div>
 </div>
 
-<div class="card shadow-sm">
-    <div class="card-header bg-white"><h5 class="mb-0">Tüm Ekip Görevleri</h5></div>
-    <div class="card-body p-0">
-        <table class="table table-striped mb-0">
-            <thead>
-                <tr>
-                    <th>Çalışan</th>
-                    <th>Görev</th>
-                    <th>Öncelik</th>
-                    <th>Durum</th>
-                    <th>İşlemler</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for task in tasks %}
-                <tr>
-                    <td>{{ task.assigned_to.get_full_name }}</td>
-                    <td>{{ task.title }}</td>
-                    <td>{{ task.get_priority_display }}</td>
-                    <td>{{ task.get_status_display }}</td>
-                    <td><a href="{% url 'task_detail' task.pk %}" class="btn btn-sm btn-outline-secondary">Düzenle</a></td>
-                </tr>
-                {% empty %}
-                <tr><td colspan="5" class="text-center py-4">Henüz hiç görev oluşturulmamış.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
+<!-- 1. BÖLÜM: ANALİZ VE FİLTRELEME MERKEZİ -->
+<div class="card shadow-sm mb-4 border-0">
+    <div class="card-body bg-light rounded">
+        <div class="row g-3 align-items-end">
+            <!-- A) PERSONEL SEÇİMİ -->
+            <div class="col-lg-4">
+                <form method="get" id="userForm">
+                    <!-- Mevcut filtreleri koru -->
+                    <input type="hidden" name="strategy" value="{{ current_strategy|default:'balanced' }}">
+                    <input type="hidden" name="range" value="{{ current_range|default:'month' }}">
+                    <input type="hidden" name="start" value="{{ start_date_val }}">
+                    <input type="hidden" name="end" value="{{ end_date_val }}">
+                    
+                    <label class="form-label small fw-bold text-muted text-uppercase">Analiz Edilecek Personel</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
+                        <select name="user_id" class="form-select border-start-0 ps-0" onchange="this.form.submit()">
+                            <option value="all" {% if not selected_user_id %}selected{% endif %}>Tüm Ekip (Genel Özet)</option>
+                            {% for emp in employees %}
+                            <option value="{{ emp.id }}" {% if selected_user_id == emp.id %}selected{% endif %}>
+                                {{ emp.get_full_name|default:emp.username }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </form>
+            </div>
+
+            <!-- B) DETAYLI FİLTRELER (Sadece Personel Seçiliyse Görünür) -->
+            <div class="col-lg-8">
+                {% if selected_user_id %}
+                <div class="row g-2">
+                    <!-- Strateji Seçimi -->
+                    <div class="col-md-6">
+                        <form method="get">
+                            <input type="hidden" name="user_id" value="{{ selected_user_id }}">
+                            <input type="hidden" name="range" value="{{ current_range|default:'month' }}">
+                            <input type="hidden" name="start" value="{{ start_date_val }}">
+                            <input type="hidden" name="end" value="{{ end_date_val }}">
+                            
+                            <label class="form-label small fw-bold text-muted text-uppercase">Algoritma</label>
+                            <div class="btn-group w-100 shadow-sm" role="group">
+                                <button type="submit" name="strategy" value="balanced" class="btn btn-sm btn-outline-primary {% if current_strategy == 'balanced' or not current_strategy %}active{% endif %}">Dengeli</button>
+                                <button type="submit" name="strategy" value="priority_weighted" class="btn btn-sm btn-outline-primary {% if current_strategy == 'priority_weighted' %}active{% endif %}">Öncelik</button>
+                                <button type="submit" name="strategy" value="size_weighted" class="btn btn-sm btn-outline-primary {% if current_strategy == 'size_weighted' %}active{% endif %}">Büyüklük</button>
+                                <button type="submit" name="strategy" value="deadline_weighted" class="btn btn-sm btn-outline-primary {% if current_strategy == 'deadline_weighted' %}active{% endif %}">Vade</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Tarih Aralığı -->
+                    <div class="col-md-6">
+                        <form method="get">
+                            <input type="hidden" name="user_id" value="{{ selected_user_id }}">
+                            <input type="hidden" name="strategy" value="{{ current_strategy|default:'balanced' }}">
+                            
+                            <label class="form-label small fw-bold text-muted text-uppercase">Zaman Aralığı</label>
+                            <div class="input-group input-group-sm shadow-sm">
+                                <button type="submit" name="range" value="week" class="btn btn-outline-secondary bg-white text-dark {% if current_range == 'week' %}active{% endif %}">Hafta</button>
+                                <button type="submit" name="range" value="month" class="btn btn-outline-secondary bg-white text-dark {% if current_range == 'month' or not current_range %}active{% endif %}">Ay</button>
+                                <button type="submit" name="range" value="year" class="btn btn-outline-secondary bg-white text-dark {% if current_range == 'year' %}active{% endif %}">Yıl</button>
+                                <!-- Custom Date Picker -->
+                                <input type="date" name="start" class="form-control" value="{{ start_date_val }}" style="min-width: 0;">
+                                <input type="date" name="end" class="form-control" value="{{ end_date_val }}" style="min-width: 0;">
+                                <button type="submit" name="range" value="custom" class="btn btn-primary"><i class="fas fa-filter"></i></button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert alert-light mb-0 border h-100 d-flex align-items-center text-muted small">
+                    <i class="fas fa-info-circle me-2"></i> Detaylı iş yükü optimizasyonu ve tarih filtresi için lütfen sol taraftan bir personel seçiniz.
+                </div>
+                {% endif %}
+            </div>
+        </div>
     </div>
 </div>
+
+<!-- 2. BÖLÜM: ACİL DURUM UYARILARI -->
+{% if delayed_tasks %}
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-danger text-white d-flex align-items-center">
+        <i class="fas fa-exclamation-triangle me-2 fa-lg"></i>
+        <h6 class="mb-0">Dikkat Gerektiren Görevler</h6>
+    </div>
+    <div class="list-group list-group-flush">
+        {% for task in delayed_tasks %}
+        <a href="{% url 'task_detail' task.pk %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center px-4 py-3">
+            <div>
+                <strong class="text-danger">{{ task.title }}</strong> 
+                <span class="text-muted small ms-2">Sorumlu: {{ task.assigned_to.get_full_name|default:task.assigned_to.username }}</span>
+                <div class="small mt-1">
+                    {% if task.due_date < today %}
+                        <span class="badge bg-danger">Gecikmiş ({{ task.due_date|date:"d M" }})</span>
+                    {% else %}
+                        <span class="badge bg-warning text-dark">Acil Başlangıç (Son 3 Gün)</span>
+                    {% endif %}
+                </div>
+            </div>
+            <i class="fas fa-chevron-right text-muted"></i>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- 3. BÖLÜM: DİNAMİK GRAFİK -->
+<div class="card shadow-sm mb-4 border-0">
+    <div class="card-header bg-white pt-3 border-bottom d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-bold text-dark">
+            <i class="fas fa-chart-pie text-info me-2"></i>
+            {% if selected_user_id %}
+                {{ chart_context.user.get_full_name|default:chart_context.user.username }}
+            {% else %}
+                Ekip Performans Analizi
+            {% endif %}
+        </h5>
+        {% if selected_user_id %}
+            <span class="badge bg-light text-dark border">{{ current_strategy|title }} Algoritması</span>
+        {% endif %}
+    </div>
+    <div class="card-body">
+        <div style="height: 350px;">
+            <canvas id="mainChart"></canvas>
+        </div>
+        {% if selected_user_id %}
+        <div class="alert alert-light mt-3 mb-0 small border-0 text-muted">
+            <i class="fas fa-info-circle me-1"></i> <strong>Bilgi:</strong> Günlük 8 saatlik mesai kapasitesini aşan yüklemeler <span class="text-danger fw-bold">kırmızı</span> ile gösterilir.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- 4. BÖLÜM: TÜM GÖREVLER LİSTESİ -->
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-white pt-3 border-bottom">
+        <h5 class="mb-0 fw-bold"><i class="fas fa-list me-2"></i>Tüm Ekip Görevleri</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light small text-uppercase text-muted">
+                    <tr>
+                        <th class="ps-4">Çalışan</th>
+                        <th>Görev</th>
+                        <th>Öncelik</th>
+                        <th>Durum</th>
+                        <th>Bitiş</th>
+                        <th class="text-end pe-4">İşlem</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for task in tasks %}
+                    <tr>
+                        <td class="ps-4">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-light rounded-circle p-2 me-2 text-secondary"><i class="fas fa-user"></i></div>
+                                <div>
+                                    <div class="fw-bold text-dark">{{ task.assigned_to.get_full_name|default:task.assigned_to.username }}</div>
+                                    <small class="text-muted">{{ task.assigned_to.title }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ task.title }}</td>
+                        <td>
+                            <span class="badge bg-{% if task.priority == 'yuksek' %}danger{% elif task.priority == 'orta' %}warning{% else %}success{% endif %}">
+                                {{ task.get_priority_display }}
+                            </span>
+                        </td>
+                        <td><span class="badge bg-white text-dark border">{{ task.get_status_display }}</span></td>
+                        <td>{{ task.due_date|date:"d M" }}</td>
+                        <td class="text-end pe-4">
+                            <a href="{% url 'task_detail' task.pk %}" class="btn btn-sm btn-outline-secondary">İncele</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" class="text-center py-5 text-muted">Henüz hiç görev oluşturulmamış.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- VERİ AKTARIMI (GÜVENLİ) -->
+{{ chart_context.type|json_script:"chart-type" }}
+{{ chart_context.labels|json_script:"chart-labels" }}
+{{ chart_context.data|json_script:"chart-individual-data" }}
+{{ chart_context.planned|json_script:"chart-aggregate-planned" }}
+{{ chart_context.spent|json_script:"chart-aggregate-spent" }}
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const chartType = JSON.parse(document.getElementById('chart-type').textContent);
+        const labels = JSON.parse(document.getElementById('chart-labels').textContent);
+        const ctx = document.getElementById('mainChart').getContext('2d');
+
+        // Veri Kontrolü
+        if (!labels || labels.length === 0) {
+            document.getElementById('mainChart').parentElement.innerHTML = `
+                <div class="d-flex align-items-center justify-content-center h-100 text-muted">
+                    <p><i class="fas fa-info-circle me-2"></i>Görüntülenecek veri bulunamadı.</p>
+                </div>`;
+            return;
+        }
+
+        let chartConfig = {};
+
+        if (chartType === 'individual') {
+            // -------------------------------------------------
+            // SENARYO A: BİREYSEL İŞ YÜKÜ GRAFİĞİ (Çalışan Paneli Gibi)
+            // -------------------------------------------------
+            const data = JSON.parse(document.getElementById('chart-individual-data').textContent);
+            
+            chartConfig = {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Günlük Planlanan Saat',
+                        data: data,
+                        backgroundColor: data.map(v => v > 8 ? 'rgba(220, 53, 69, 0.7)' : 'rgba(13, 110, 253, 0.6)'),
+                        borderColor: data.map(v => v > 8 ? 'rgb(220, 53, 69)' : 'rgb(13, 110, 253)'),
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { 
+                            beginAtZero: true, 
+                            title: { display: true, text: 'Saat' },
+                            grid: { color: '#f0f0f0' }
+                        },
+                        x: { grid: { display: false } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            };
+
+        } else {
+            // -------------------------------------------------
+            // SENARYO B: GENEL EKİP PERFORMANS GRAFİĞİ
+            // -------------------------------------------------
+            const planned = JSON.parse(document.getElementById('chart-aggregate-planned').textContent);
+            const spent = JSON.parse(document.getElementById('chart-aggregate-spent').textContent);
+
+            chartConfig = {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Planlanan Toplam Süre',
+                            data: planned,
+                            backgroundColor: 'rgba(13, 110, 253, 0.6)',
+                            borderColor: 'rgba(13, 110, 253, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Harcanan Toplam Süre',
+                            data: spent,
+                            backgroundColor: 'rgba(255, 193, 7, 0.6)',
+                            borderColor: 'rgba(255, 193, 7, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { 
+                            beginAtZero: true, 
+                            title: { display: true, text: 'Saat' },
+                            grid: { color: '#f0f0f0' }
+                        }
+                    }
+                }
+            };
+        }
+
+        new Chart(ctx, chartConfig);
+    });
+</script>
 {% endblock %}

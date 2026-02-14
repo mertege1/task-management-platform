@@ -18,4 +18,6 @@ urlpatterns = [
     # <int:pk> kısmı, URL'deki sayıyı alıp fonksiyona 'pk' (ID) olarak gönderir.
     path('task/<int:pk>/', views.task_detail, name='task_detail'),
     path('task/<int:pk>/edit/', views.update_task, name='update_task'),
+    
+    path('task/<int:pk>/delete/', views.delete_task, name='delete_task'),
 ]

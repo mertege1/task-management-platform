@@ -36,14 +36,19 @@ class TaskForm(forms.ModelForm):
     )
 
     def __init__(self, *args, **kwargs):
-        # Form başlatılırken kullanıcı bilgisini (user) alalım
         self.user = kwargs.pop('user', None)
         super(TaskForm, self).__init__(*args, **kwargs)
 
-        # Eğer giriş yapan kişi 'Çalışan' ise:
-        # 1. Başkasına görev atayamaz, 'assigned_to' alanı sadece kendisi olmalı veya gizlenmeli.
-        # 2. Biz şimdilik otomatik olarak kendisini seçeceğiz ve alanı okunabilir yapacağız.
         if self.user and self.user.role == 'employee':
-             self.fields['assigned_to'].queryset = CustomUser.objects.filter(id=self.user.id)
-             self.fields['assigned_to'].initial = self.user
-             self.fields['assigned_to'].widget.attrs['readonly'] = True
+            # Eğer YENİ bir görev oluşturuluyorsa (instance.pk yoksa)
+            if not self.instance.pk:
+                self.fields['assigned_to'].queryset = CustomUser.objects.filter(id=self.user.id)
+                self.fields['assigned_to'].initial = self.user
+            else:
+                # Eğer mevcut bir görev GÜNCELLENİYORSA:
+                # Atanan kişiyi değiştiremesinler (disabled), ama mevcut sorumlu kimse o görünsün.
+                self.fields['assigned_to'].queryset = CustomUser.objects.filter(id=self.instance.assigned_to.id)
+                self.fields['assigned_to'].initial = self.instance.assigned_to
+            
+            # Her iki durumda da çalışanlar atanan kişiyi değiştiremesin
+            self.fields['assigned_to'].disabled = True

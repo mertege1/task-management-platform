@@ -123,3 +123,7 @@ AUTH_USER_MODEL = 'core.CustomUser'
 # Giriş/Çıkış Ayarları
 LOGIN_REDIRECT_URL = 'home'  # Giriş yapınca ana sayfaya git
 LOGOUT_REDIRECT_URL = 'login' # Çıkış yapınca giriş ekranına dön
+
+# E-postaların terminale düşmesi için gerekli (settings.py sonuna ekleyin)
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+DEFAULT_FROM_EMAIL = 'bilgi@is-takip.com'
