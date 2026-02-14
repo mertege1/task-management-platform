@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from datetime import date
 
 # ---------------------------------------------------------
 # 1. KULLANICI MODELİ (CustomUser)
@@ -10,7 +11,7 @@ class CustomUser(AbstractUser):
         ('employee', 'Çalışan'),
         ('manager', 'Ekip Yöneticisi'),
     )
-    # Ekipler (Örnek olarak sabit eklendi, istenirse ayrı tablo yapılabilir)
+    # Ekipler
     TEAM_CHOICES = (
         ('team1', 'Yazılım Geliştirme Ekibi'),
         ('team2', 'Test ve Kalite Ekibi'),
@@ -33,7 +34,7 @@ class CustomUser(AbstractUser):
 # 2. GÖREV MODELİ (Task)
 # ---------------------------------------------------------
 class Task(models.Model):
-    # Seçenekler (Dropdownlar)
+    # Seçenekler
     PRIORITY_CHOICES = (
         ('yuksek', 'Yüksek'),
         ('orta', 'Orta'),
@@ -69,16 +70,16 @@ class Task(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Oluşturulma Zamanı')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='Son Güncelleme')
 
-    # İlişkiler (Kullanıcı Bağlantıları)
+    # İlişkiler
     created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='created_tasks', verbose_name='Oluşturan Yönetici')
     assigned_to = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='assigned_tasks', verbose_name='Atanan Çalışan')
     
-    # Many-to-Many İlişkiler
     partners = models.ManyToManyField(CustomUser, related_name='partner_tasks', blank=True, verbose_name='İş Ortakları')
     informees = models.ManyToManyField(CustomUser, related_name='informed_tasks', blank=True, verbose_name='Bilgilendirilecek Kişiler')
 
     # Metrikler
     planned_hours = models.DecimalField(max_digits=6, decimal_places=2, verbose_name='Planlanan Süre (Saat)')
+    # NOT: spent_hours artık WorkLog'lardan toplanarak güncellenecek
     spent_hours = models.DecimalField(max_digits=6, decimal_places=2, default=0, verbose_name='Harcanan Süre (Saat)')
 
     def __str__(self):
@@ -87,7 +88,7 @@ class Task(models.Model):
     class Meta:
         verbose_name = 'Görev'
         verbose_name_plural = 'Görevler'
-        ordering = ['-created_at'] # En yeni görev en üstte
+        ordering = ['-created_at']
 
 
 # ---------------------------------------------------------
@@ -107,3 +108,25 @@ class RoadmapItem(models.Model):
         ordering = ['order']
         verbose_name = 'Yol Haritası Adımı'
         verbose_name_plural = 'Yol Haritası Adımları'
+
+
+# ---------------------------------------------------------
+# 4. İŞ/EFOR KAYDI MODELİ (WorkLog) - YENİ
+# ---------------------------------------------------------
+class WorkLog(models.Model):
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='work_logs', verbose_name='İlgili Görev')
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='work_logs', verbose_name='Çalışan')
+    
+    hours = models.DecimalField(max_digits=5, decimal_places=2, verbose_name='Harcanan Süre (Saat)')
+    date = models.DateField(default=date.today, verbose_name='Tarih')
+    description = models.TextField(verbose_name='Yapılan İş Açıklaması')
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.task.title} ({self.hours} saat)"
+
+    class Meta:
+        verbose_name = 'Efor Kaydı'
+        verbose_name_plural = 'Efor Kayıtları'
+        ordering = ['-date', '-created_at']

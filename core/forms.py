@@ -1,6 +1,9 @@
 from django import forms
-from .models import Task, CustomUser
+from .models import Task, CustomUser, WorkLog
 
+# ---------------------------------------------------------
+# 1. GÖREV FORMU (TaskForm)
+# ---------------------------------------------------------
 class TaskForm(forms.ModelForm):
     class Meta:
         model = Task
@@ -9,7 +12,6 @@ class TaskForm(forms.ModelForm):
             'assigned_to', 'partners', 'informees',
             'start_date', 'due_date', 'planned_hours', 'spent_hours', 'roadmap_summary'
         ]
-        # Form elemanlarına Bootstrap sınıfları ve özellikleri ekleyelim
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Görevin kısa başlığı'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Detaylı açıklama...'}),
@@ -17,20 +19,24 @@ class TaskForm(forms.ModelForm):
             'status': forms.Select(attrs={'class': 'form-select'}),
             'size': forms.Select(attrs={'class': 'form-select'}),
             'assigned_to': forms.Select(attrs={'class': 'form-select'}),
-            'partners': forms.SelectMultiple(attrs={'class': 'form-select', 'size': '5'}), # Ctrl ile çoklu seçim
+            'partners': forms.SelectMultiple(attrs={'class': 'form-select', 'size': '5'}),
             'informees': forms.SelectMultiple(attrs={'class': 'form-select', 'size': '3'}),
             'start_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'due_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'planned_hours': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.5'}),
-            'spent_hours': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.5'}),
+            'spent_hours': forms.NumberInput(attrs={
+                'class': 'form-control bg-light', 
+                'step': '0.1', 
+                'readonly': 'readonly'
+            }), 
         }
         labels = {
-            'roadmap_summary': 'Yol Haritası Özeti'
+            'roadmap_summary': 'Yol Haritası Özeti',
+            'spent_hours': 'Toplam Harcanan Süre (Otomatik)'
         }
     
-    # Yol haritası için basit bir alan ekleyelim (Şimdilik textarea, ileride detaylandırırız)
     roadmap_summary = forms.CharField(
-        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 5, 'placeholder': 'Adım 1: Analiz (2 saat)\nAdım 2: Geliştirme (4 saat)...'}),
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 5, 'placeholder': 'Adım 1: Analiz...\nAdım 2: Geliştirme...'}),
         required=False,
         label="Hızlı Yol Haritası (Taslak)"
     )
@@ -40,15 +46,44 @@ class TaskForm(forms.ModelForm):
         super(TaskForm, self).__init__(*args, **kwargs)
 
         if self.user and self.user.role == 'employee':
-            # Eğer YENİ bir görev oluşturuluyorsa (instance.pk yoksa)
             if not self.instance.pk:
                 self.fields['assigned_to'].queryset = CustomUser.objects.filter(id=self.user.id)
                 self.fields['assigned_to'].initial = self.user
             else:
-                # Eğer mevcut bir görev GÜNCELLENİYORSA:
-                # Atanan kişiyi değiştiremesinler (disabled), ama mevcut sorumlu kimse o görünsün.
                 self.fields['assigned_to'].queryset = CustomUser.objects.filter(id=self.instance.assigned_to.id)
                 self.fields['assigned_to'].initial = self.instance.assigned_to
             
-            # Her iki durumda da çalışanlar atanan kişiyi değiştiremesin
             self.fields['assigned_to'].disabled = True
+
+# ---------------------------------------------------------
+# 2. EFOR KAYIT FORMU (WorkLogForm)
+# ---------------------------------------------------------
+class WorkLogForm(forms.ModelForm):
+    class Meta:
+        model = WorkLog
+        fields = ['hours', 'date', 'description']
+        widgets = {
+            'hours': forms.NumberInput(attrs={
+                'class': 'form-control', 
+                'step': '0.1', 
+                'placeholder': 'Örn: 2.5',
+                'min': '0.1',
+                'required': 'true'
+            }),
+            'date': forms.DateInput(attrs={
+                'class': 'form-control', 
+                'type': 'date',
+                'required': 'true'
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control', 
+                'rows': 2, 
+                'placeholder': 'Bugün bu iş için neler yaptınız?',
+                'required': 'true'
+            }),
+        }
+        labels = {
+            'hours': 'Çalışılan Süre (Saat)',
+            'date': 'Çalışma Tarihi',
+            'description': 'İş Açıklaması'
+        }

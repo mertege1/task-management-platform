@@ -4,133 +4,165 @@
 
 {% block extra_css %}
 <style>
-    /* Modern Kart Tasarımı */
+    /* TASARIM DEĞİŞKENLERİ */
+    :root {
+        --manager-accent: #dc3545; /* Yönetici paneli için vurgu rengi (Kırmızı/Modern) */
+        --card-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+        --radius: 16px;
+    }
+
+    /* MODERN KART YAPISI */
     .dashboard-card {
         border: none;
-        border-radius: 12px;
-        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
-        transition: transform 0.2s;
-        background-color: white;
+        border-radius: var(--radius);
+        box-shadow: var(--card-shadow);
+        transition: all 0.3s ease;
+        background-color: #ffffff;
+        margin-bottom: 24px;
     }
     
     .dashboard-card:hover {
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08);
     }
 
-    /* Avatar Stili */
-    .avatar-circle {
-        width: 36px;
-        height: 36px;
-        background-color: #eef2f6;
-        color: #5b6b79;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 600;
-        font-size: 0.85rem;
-        margin-right: 10px;
+    /* FİLTRE VE TOOLBAR STİLLERİ */
+    .toolbar-container {
+        background-color: #f8fafc;
+        border-radius: 50px;
+        padding: 6px;
+        border: 1px solid #e2e8f0;
+        display: inline-flex;
     }
 
-    /* Tablo Düzenlemeleri */
-    .table-modern thead th {
-        font-size: 0.75rem;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: #9ca3af;
-        font-weight: 600;
-        border-bottom: 1px solid #f3f4f6;
-        padding-bottom: 12px;
-    }
-    
-    .table-modern tbody td {
-        padding: 16px 8px;
-        border-bottom: 1px solid #f9fafb;
-        vertical-align: middle;
-    }
-
-    /* Filtre Butonları */
     .btn-filter {
-        border: 1px solid #e5e7eb;
-        background-color: white;
-        color: #4b5563;
-        font-size: 0.85rem;
-        padding: 6px 12px;
-        transition: all 0.2s;
+        border: none;
+        background: transparent;
+        color: #64748b;
+        font-size: 0.8rem;
+        padding: 8px 16px;
+        font-weight: 600;
+        border-radius: 50px;
+        transition: all 0.2s ease;
         display: inline-flex;
         align-items: center;
         gap: 6px;
     }
 
     .btn-filter:hover {
-        background-color: #f9fafb;
+        color: var(--manager-accent);
+        background-color: #ffffff;
     }
 
     .btn-filter.active {
-        background-color: #eff6ff;
-        color: #0d6efd;
-        border-color: #bfdbfe;
-        font-weight: 600;
+        background-color: #ffffff;
+        color: var(--manager-accent);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    }
+
+    /* TABLO VE AVATAR */
+    .table-modern thead th {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #94a3b8;
+        background-color: #fcfdfe;
+        padding: 20px;
+        border-bottom: 2px solid #f1f5f9;
+    }
+    
+    .table-modern tbody td {
+        padding: 18px 20px;
+        vertical-align: middle;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .avatar-box {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        background: #f1f5f9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        color: #475569;
+    }
+
+    /* PROGRESS BAR */
+    .progress-sm {
+        height: 6px;
+        border-radius: 10px;
+        background-color: #f1f5f9;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="row mb-4 align-items-center">
+
+<!-- BÖLÜM 1: ÜST BAŞLIK VE GLOBAL AKSİYONLAR -->
+<div class="row mb-5 align-items-center">
     <div class="col-md-6">
-        <h2 class="fw-bold"><i class="fas fa-chart-pie text-danger me-2"></i> Ekip Yönetimi</h2>
-        <p class="text-muted mb-0">Performans takibi ve iş yükü optimizasyonu.</p>
+        <h1 class="fw-extrabold text-dark mb-1 h2"><i class="fas fa-shield-alt text-danger me-2"></i>Ekip Yönetim Merkezi</h1>
+        <p class="text-muted mb-0">Gerçek zamanlı performans analizi ve iş yükü denetimi.</p>
     </div>
-    <div class="col-md-6 text-end">
-        <a href="{% url 'create_task' %}" class="btn btn-success shadow-sm px-4">
-            <i class="fas fa-plus-circle me-1"></i> Yeni Görev Ata
-        </a>
-        <a href="/admin/" class="btn btn-outline-dark ms-2 shadow-sm" target="_blank">
-            <i class="fas fa-cog me-1"></i> Admin Paneli
-        </a>
+    <div class="col-md-6 text-md-end mt-4 mt-md-0">
+        <div class="d-flex justify-content-md-end gap-2">
+            <a href="{% url 'create_task' %}" class="btn btn-success shadow-sm px-4 rounded-3 fw-bold">
+                <i class="fas fa-plus-circle me-2"></i>Yeni Görev Ata
+            </a>
+            <a href="/admin/" class="btn btn-outline-dark shadow-sm px-3 rounded-3 fw-bold" target="_blank">
+                <i class="fas fa-user-shield me-2"></i>Admin
+            </a>
+        </div>
     </div>
 </div>
 
-<!-- 1. BÖLÜM: ACİL DURUM UYARILARI -->
+<!-- BÖLÜM 2: DİKKAT GEREKTİREN DURUMLAR (ALERTS) -->
 {% if delayed_tasks %}
 <div class="row mb-4">
     <div class="col-12">
-        {% for task in delayed_tasks %}
-        <div class="alert alert-danger shadow-sm border-0 d-flex align-items-center rounded-3 mb-2" role="alert">
-            <div class="p-2 me-3 rounded-circle bg-white text-danger">
-                <i class="fas fa-exclamation-triangle"></i>
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+            <div class="card-header bg-danger text-white py-3 px-4 d-flex align-items-center">
+                <i class="fas fa-fire-alt me-2 fa-lg"></i>
+                <h6 class="mb-0 fw-bold">Kritik Durumdaki Görevler ({{ delayed_tasks|length }})</h6>
             </div>
-            <div class="flex-grow-1">
-                <h6 class="alert-heading mb-0 fw-bold">Dikkat Gerektiren Görev: {{ task.title }}</h6>
-                <div class="small text-muted d-flex align-items-center mt-1">
-                    <i class="fas fa-user me-1"></i> Sorumlu: {{ task.assigned_to.get_full_name|default:task.assigned_to.username }}
-                    <span class="mx-2">•</span>
-                    {% if task.due_date < today %}
-                        <span class="badge bg-danger">Gecikmiş ({{ task.due_date|date:"d M" }})</span>
-                    {% else %}
-                        <span class="badge bg-warning text-dark">Acil Başlangıç (Son 3 Gün)</span>
-                    {% endif %}
+            <div class="list-group list-group-flush">
+                {% for task in delayed_tasks %}
+                <div class="list-group-item d-flex justify-content-between align-items-center px-4 py-3 border-bottom">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-danger-subtle text-danger rounded-circle p-2 me-3">
+                            <i class="fas fa-exclamation-circle"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold text-dark">{{ task.title }}</div>
+                            <small class="text-muted">
+                                <i class="fas fa-user-edit me-1"></i> {{ task.assigned_to.get_full_name|default:task.assigned_to.username }} 
+                                <span class="mx-2">|</span>
+                                <i class="far fa-calendar-times me-1"></i> {{ task.due_date|date:"d M" }}
+                            </small>
+                        </div>
+                    </div>
+                    <a href="{% url 'task_detail' task.pk %}" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold">İncele</a>
                 </div>
+                {% endfor %}
             </div>
-            <a href="{% url 'task_detail' task.pk %}" class="btn btn-sm btn-outline-danger bg-white">İncele</a>
         </div>
-        {% endfor %}
     </div>
 </div>
 {% endif %}
 
-<!-- 2. BÖLÜM: PERSONEL SEÇİMİ VE ANALİZ -->
+<!-- BÖLÜM 3: PERSONEL SEÇİMİ VE ANALİZ FİLTRELERİ -->
 <div class="dashboard-card mb-4">
     <div class="card-body p-4">
-        <div class="row g-3 align-items-end">
-            <!-- A) PERSONEL SEÇİMİ (Sayfa Yeniler) -->
+        <div class="row g-4 align-items-end">
+            <!-- A) PERSONEL SEÇİCİ -->
             <div class="col-lg-4">
-                <form method="get" id="userSelectForm">
-                    <label class="form-label small fw-bold text-muted text-uppercase mb-2">Analiz Edilecek Personel</label>
-                    <div class="input-group shadow-sm">
-                        <span class="input-group-text bg-white border-end-0 text-muted ps-3"><i class="fas fa-search"></i></span>
-                        <select name="user_id" class="form-select border-start-0 ps-2 py-2" onchange="document.getElementById('userSelectForm').submit()" style="font-weight: 500;">
-                            <option value="all" {% if not selected_user_id %}selected{% endif %}>Tüm Ekip (Genel Performans)</option>
+                <form method="get" id="userFilterForm">
+                    <label class="form-label small fw-bold text-muted text-uppercase mb-2"><i class="fas fa-users me-1"></i>Analiz Odağı</label>
+                    <div class="input-group shadow-sm border rounded-3 overflow-hidden">
+                        <span class="input-group-text bg-white border-0 text-muted ps-3"><i class="fas fa-filter"></i></span>
+                        <select name="user_id" class="form-select border-0 ps-2 py-2 fw-bold" onchange="this.form.submit()">
+                            <option value="all" {% if not selected_user_id %}selected{% endif %}>Tüm Ekip (Genel Kıyaslama)</option>
                             {% for emp in employees %}
                             <option value="{{ emp.id }}" {% if selected_user_id == emp.id %}selected{% endif %}>
                                 {{ emp.get_full_name|default:emp.username }}
@@ -141,56 +173,33 @@
                 </form>
             </div>
 
-            <!-- B) DETAYLI FİLTRELER (Sadece Personel Seçiliyse Görünür - AJAX) -->
+            <!-- B) AJAX FİLTRE TOOLBAR (Sadece Bireysel Modda Aktif) -->
             <div class="col-lg-8">
                 {% if selected_user_id %}
                 <div class="row g-3">
-                    <!-- Algoritma Seçici -->
-                    <div class="col-md-12 col-xl-7">
-                        <label class="form-label small fw-bold text-muted text-uppercase mb-2">Optimizasyon Algoritması</label>
-                        <div class="d-flex bg-light rounded p-1 border">
-                            <div class="btn-group w-100 shadow-sm" role="group">
-                                <button type="button" onclick="updateChart('balanced')" id="btn-balanced" class="btn btn-sm btn-filter border-0 rounded {% if current_strategy == 'balanced' or not current_strategy %}active{% endif %}" title="Dengeli Dağıtım">
-                                    <i class="fas fa-balance-scale"></i> Dengeli
-                                </button>
-                                <button type="button" onclick="updateChart('priority_weighted')" id="btn-priority_weighted" class="btn btn-sm btn-filter border-0 rounded {% if current_strategy == 'priority_weighted' %}active{% endif %}" title="Öncelik Bazlı">
-                                    <i class="fas fa-flag"></i> Öncelik
-                                </button>
-                                <button type="button" onclick="updateChart('size_weighted')" id="btn-size_weighted" class="btn btn-sm btn-filter border-0 rounded {% if current_strategy == 'size_weighted' %}active{% endif %}" title="İş Büyüklüğü">
-                                    <i class="fas fa-weight-hanging"></i> Büyüklük
-                                </button>
-                                <button type="button" onclick="updateChart('deadline_weighted')" id="btn-deadline_weighted" class="btn btn-sm btn-filter border-0 rounded {% if current_strategy == 'deadline_weighted' %}active{% endif %}" title="Teslim Tarihi Bazlı">
-                                    <i class="fas fa-hourglass-half"></i> Vade
-                                </button>
-                            </div>
+                    <div class="col-md-7">
+                        <label class="form-label small fw-bold text-muted text-uppercase mb-2">Simülasyon Algoritması</label>
+                        <div class="toolbar-container w-100 justify-content-between">
+                            <button type="button" onclick="updateChart('balanced')" id="btn-balanced" class="btn-filter active"><i class="fas fa-balance-scale"></i> Dengeli</button>
+                            <button type="button" onclick="updateChart('priority_weighted')" id="btn-priority_weighted" class="btn-filter"><i class="fas fa-flag"></i> Öncelik</button>
+                            <button type="button" onclick="updateChart('size_weighted')" id="btn-size_weighted" class="btn-filter"><i class="fas fa-weight"></i> Büyüklük</button>
+                            <button type="button" onclick="updateChart('deadline_weighted')" id="btn-deadline_weighted" class="btn-filter"><i class="fas fa-hourglass-half"></i> Vade</button>
                         </div>
                     </div>
-
-                    <!-- Tarih Aralığı -->
-                    <div class="col-md-12 col-xl-5">
+                    <div class="col-md-5">
                         <label class="form-label small fw-bold text-muted text-uppercase mb-2">Zaman Aralığı</label>
-                        <div class="d-flex bg-white rounded shadow-sm border">
-                            <div class="btn-group btn-group-sm">
-                                <button type="button" onclick="updateRange('week')" id="btn-range-week" class="btn btn-sm btn-outline-secondary bg-white text-dark border-0 {% if current_range == 'week' %}active{% endif %}">Hafta</button>
-                                <button type="button" onclick="updateRange('month')" id="btn-range-month" class="btn btn-sm btn-outline-secondary bg-white text-dark border-0 {% if current_range == 'month' or not current_range %}active{% endif %}">Ay</button>
-                                <button type="button" onclick="updateRange('year')" id="btn-range-year" class="btn btn-sm btn-outline-secondary bg-white text-dark border-0 {% if current_range == 'year' %}active{% endif %}">Yıl</button>
-                            </div>
-                            <div class="vr my-1"></div>
-                            <div class="d-flex align-items-center px-1 flex-grow-1">
-                                <input type="date" id="custom-start" class="form-control form-control-sm border-0 p-0 text-center" value="{{ start_date_val }}" style="font-size: 0.75rem;">
-                                <span class="text-muted mx-1">-</span>
-                                <input type="date" id="custom-end" class="form-control form-control-sm border-0 p-0 text-center" value="{{ end_date_val }}" style="font-size: 0.75rem;">
-                                <button type="button" onclick="updateRange('custom')" class="btn btn-sm btn-link text-primary p-0 ms-1"><i class="fas fa-filter"></i></button>
-                            </div>
+                        <div class="toolbar-container w-100 justify-content-between">
+                            <button type="button" onclick="updateRange('week')" id="btn-range-week" class="btn-filter">Hafta</button>
+                            <button type="button" onclick="updateRange('month')" id="btn-range-month" class="btn-filter active">Ay</button>
+                            <button type="button" onclick="updateRange('year')" id="btn-range-year" class="btn-filter">Yıl</button>
+                            <button type="button" onclick="toggleCustomDates()" class="btn-filter" title="Özel"><i class="fas fa-calendar-alt"></i></button>
                         </div>
                     </div>
                 </div>
                 {% else %}
-                <div class="d-flex align-items-end h-100 pb-1">
-                    <div class="alert alert-light mb-0 border w-100 py-2 d-flex align-items-center text-muted small shadow-sm rounded-3">
-                        <i class="fas fa-info-circle me-2 text-info fa-lg"></i> 
-                        <span>Detaylı iş yükü optimizasyonu için sol taraftan bir <strong>personel seçiniz</strong>. Şu an genel görünümde siniz.</span>
-                    </div>
+                <div class="alert alert-light mb-0 border-0 shadow-sm d-flex align-items-center rounded-3 py-2 px-3">
+                    <i class="fas fa-info-circle text-info me-3 fa-lg"></i>
+                    <span class="small text-muted">Bireysel iş yükü simülasyonu ve efor detayları için sol taraftan bir <strong>personel seçin</strong>.</span>
                 </div>
                 {% endif %}
             </div>
@@ -198,57 +207,59 @@
     </div>
 </div>
 
-<!-- 3. BÖLÜM: DİNAMİK GRAFİK -->
-<div class="dashboard-card mb-5">
+<!-- BÖLÜM 4: DİNAMİK GRAFİK ALANI -->
+<div class="dashboard-card mb-5 border-top border-danger border-4">
     <div class="card-header bg-white border-0 pt-4 pb-0 px-4 d-flex justify-content-between align-items-center">
         <div>
-            <h5 class="mb-1 fw-bold text-dark">
+            <h5 class="fw-bold mb-1 text-dark">
                 {% if selected_user_id %}
-                    <i class="fas fa-user-clock text-primary me-2"></i>{{ chart_context.user.get_full_name|default:chart_context.user.username }}
+                    <i class="fas fa-user-clock text-danger me-2"></i>{{ chart_context.user.get_full_name|default:chart_context.user.username }} Analizi
                 {% else %}
-                    <i class="fas fa-users text-primary me-2"></i>Ekip Performans Analizi
+                    <i class="fas fa-chart-bar text-danger me-2"></i>Ekip Performans Kıyaslaması (Toplam)
                 {% endif %}
             </h5>
-            <small class="text-muted">
+            <p class="text-muted small mb-0">
                 {% if selected_user_id %}
-                    Seçilen algoritmaya göre gelecek iş yükü planlaması.
+                    Kişinin kapasite kullanım simülasyonu.
                 {% else %}
-                    Toplam Planlanan vs. Harcanan Süre Karşılaştırması.
+                    Planlanan saatler ile girilen gerçek eforların karşılaştırması.
                 {% endif %}
-            </small>
+            </p>
         </div>
         {% if selected_user_id %}
-            <span class="badge bg-light text-dark border" id="algo-badge">{{ current_strategy|default:"Dengeli"|title }} Algoritması</span>
+            <span class="badge bg-light text-dark border px-3 py-2 rounded-pill fw-bold" id="algo-badge">
+                {{ current_strategy|default:"Dengeli"|title }} Algoritması
+            </span>
         {% endif %}
     </div>
     <div class="card-body p-4">
-        <div style="height: 350px; width: 100%; transition: opacity 0.3s ease;" id="chart-container">
+        <div style="height: 400px; width: 100%; transition: opacity 0.3s ease;" id="chart-container">
             <canvas id="mainChart"></canvas>
         </div>
         {% if selected_user_id %}
-        <div class="mt-3 d-flex align-items-center text-muted small bg-light p-2 rounded">
-            <i class="fas fa-info-circle text-primary me-2"></i>
-            <span><strong>Bilgi:</strong> Günlük 8 saatlik mesai kapasitesini aşan yüklemeler <span class="text-danger fw-bold">kırmızı</span> ile gösterilir.</span>
+        <div class="mt-4 p-3 bg-light rounded-3 border-0 d-flex align-items-center">
+            <i class="fas fa-lightbulb text-warning me-3 fa-lg"></i>
+            <span class="small text-muted"><strong>Not:</strong> Kırmızı alanlar 8 saatlik kapasite aşımını, mavi alanlar ise personelin planlanan efor dağılımını gösterir.</span>
         </div>
         {% endif %}
     </div>
 </div>
 
-<!-- 4. BÖLÜM: TÜM GÖREVLER LİSTESİ -->
-<div class="dashboard-card mb-5">
-    <div class="card-header bg-white border-0 pt-4 pb-2 px-4">
-        <h5 class="fw-bold mb-0 text-secondary"><i class="fas fa-list me-2"></i>Tüm Ekip Görevleri</h5>
+<!-- BÖLÜM 5: TÜM GÖREVLER VE İLERLEME TABLOSU -->
+<div class="dashboard-card border-0 shadow-sm">
+    <div class="card-header bg-white border-bottom py-3 px-4">
+        <h5 class="fw-bold mb-0 text-dark"><i class="fas fa-list-ul me-2 text-muted"></i>Tüm Görevlerin Genel Durumu</h5>
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-modern table-hover mb-0">
-                <thead class="bg-light">
+                <thead>
                     <tr>
-                        <th class="ps-4">ÇALIŞAN</th>
-                        <th>GÖREV</th>
+                        <th class="ps-4">SORUMLU VE İŞ</th>
                         <th>ÖNCELİK</th>
-                        <th>DURUM</th>
-                        <th>BİTİŞ</th>
+                        <th>İLERLEME DURUMU</th>
+                        <th>TOPLAM EFOR</th>
+                        <th>VADE</th>
                         <th class="text-end pe-4">İŞLEM</th>
                     </tr>
                 </thead>
@@ -257,37 +268,49 @@
                     <tr>
                         <td class="ps-4">
                             <div class="d-flex align-items-center">
-                                <div class="avatar-circle bg-secondary-subtle text-dark border">
-                                    {{ task.assigned_to.first_name|first|default:task.assigned_to.username|first|upper }}
+                                <div class="avatar-box me-3">
+                                    {{ task.assigned_to.first_name|first|upper }}{{ task.assigned_to.last_name|first|upper }}
                                 </div>
                                 <div>
-                                    <div class="fw-bold text-dark">{{ task.assigned_to.get_full_name|default:task.assigned_to.username }}</div>
-                                    <small class="text-muted">{{ task.assigned_to.title }}</small>
+                                    <div class="fw-bold text-dark lh-1">{{ task.title|truncatechars:40 }}</div>
+                                    <small class="text-muted" style="font-size: 0.7rem;">{{ task.assigned_to.get_full_name }}</small>
                                 </div>
                             </div>
                         </td>
-                        <td>{{ task.title }}</td>
                         <td>
                             {% if task.priority == 'yuksek' %}
-                                <span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle">Yüksek</span>
+                                <span class="badge bg-danger-subtle text-danger rounded-pill px-3">Yüksek</span>
                             {% elif task.priority == 'orta' %}
-                                <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis border border-warning-subtle">Orta</span>
+                                <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill px-3">Orta</span>
                             {% else %}
-                                <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle">Düşük</span>
+                                <span class="badge bg-success-subtle text-success rounded-pill px-3">Düşük</span>
                             {% endif %}
                         </td>
-                        <td><span class="badge bg-white text-dark border fw-normal">{{ task.get_status_display }}</span></td>
+                        <td style="min-width: 150px;">
+                            <div class="d-flex justify-content-between mb-1">
+                                <small class="fw-bold">{% widthratio task.spent_hours task.planned_hours 100 %}%</small>
+                                <small class="text-muted">{{ task.get_status_display }}</small>
+                            </div>
+                            <div class="progress progress-sm">
+                                <div class="progress-bar {% if task.spent_hours > task.planned_hours %}bg-danger{% else %}bg-primary{% endif %}" 
+                                     style="width: {% widthratio task.spent_hours task.planned_hours 100 %}%"></div>
+                            </div>
+                        </td>
                         <td>
-                            <span class="{% if task.due_date < today %}text-danger fw-bold{% endif %}">
-                                {{ task.due_date|date:"d M" }}
+                            <span class="fw-bold text-dark">{{ task.spent_hours|default:"0" }}</span> 
+                            <small class="text-muted">/ {{ task.planned_hours }} sa</small>
+                        </td>
+                        <td>
+                            <span class="small {% if task.due_date < today %}text-danger fw-bold{% else %}text-muted{% endif %}">
+                                <i class="far fa-clock me-1"></i>{{ task.due_date|date:"d M" }}
                             </span>
                         </td>
                         <td class="text-end pe-4">
-                            <a href="{% url 'task_detail' task.pk %}" class="btn btn-sm btn-outline-secondary rounded-pill px-3">İncele</a>
+                            <a href="{% url 'task_detail' task.pk %}" class="btn btn-sm btn-link text-primary text-decoration-none fw-bold">Detay &rarr;</a>
                         </td>
                     </tr>
                     {% empty %}
-                    <tr><td colspan="6" class="text-center py-5 text-muted">Henüz hiç görev oluşturulmamış.</td></tr>
+                    <tr><td colspan="6" class="text-center py-5 text-muted">Ekip için henüz bir görev kaydı oluşturulmamış.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
@@ -295,7 +318,9 @@
     </div>
 </div>
 
-<!-- VERİ AKTARIMI (GÜVENLİ) -->
+<!-- VERİ AKTARIMI (JSON GÜVENLİ) -->
+<input type="hidden" id="custom-start" value="{{ start_date_val }}">
+<input type="hidden" id="custom-end" value="{{ end_date_val }}">
 {{ chart_context.type|json_script:"chart-type" }}
 {{ chart_context.labels|json_script:"chart-labels" }}
 {{ chart_context.data|json_script:"chart-individual-data" }}
@@ -307,12 +332,15 @@
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // GLOBAL DEĞİŞKENLER
+    /**
+     * YÖNETİCİ PANELİ STATE VE GRAFİK YÖNETİMİ
+     */
     let myChart = null;
     let currentUserId = '{{ selected_user_id|default:"all" }}';
     let currentStrategy = '{{ current_strategy|default:"balanced" }}';
     let currentRange = '{{ current_range|default:"month" }}';
 
+    // 1. ANA CHART BAŞLATICI
     document.addEventListener('DOMContentLoaded', function() {
         const chartType = JSON.parse(document.getElementById('chart-type').textContent);
         const labels = JSON.parse(document.getElementById('chart-labels').textContent);
@@ -321,144 +349,120 @@
         if (!labels || labels.length === 0) {
             document.getElementById('mainChart').parentElement.innerHTML = `
                 <div class="d-flex flex-column align-items-center justify-content-center h-100 text-muted">
-                    <i class="fas fa-chart-pie fa-3x mb-3 opacity-25"></i>
-                    <p>Görüntülenecek analiz verisi bulunamadı.</p>
+                    <i class="fas fa-chart-area fa-4x mb-3 opacity-20"></i>
+                    <p class="fw-bold">Bu görünüm için henüz veri birikmemiş.</p>
                 </div>`;
             return;
         }
 
-        let chartData = {};
-        let chartOptions = {
+        let chartConfig = {
             responsive: true,
             maintainAspectRatio: false,
-            scales: {
-                y: { beginAtZero: true, title: { display: true, text: 'Saat' }, grid: { color: '#f3f4f6' } },
-                x: { grid: { display: false } }
+            animation: { duration: 1000, easing: 'easeOutQuart' },
+            plugins: {
+                tooltip: { backgroundColor: '#1e293b', padding: 12, cornerRadius: 8 }
             }
         };
 
         if (chartType === 'individual') {
-            // A) BİREYSEL GRAFİK (AJAX Destekli)
+            // A) BİREYSEL MOD: İş Yükü Simülasyonu
             const data = JSON.parse(document.getElementById('chart-individual-data').textContent);
-            chartData = {
+            chartConfig.type = 'bar';
+            chartConfig.data = {
                 labels: labels,
                 datasets: [{
-                    label: 'Günlük Planlanan Saat',
+                    label: 'Tahmini İş Yükü (Saat)',
                     data: data,
-                    backgroundColor: data.map(v => v > 8 ? 'rgba(220, 53, 69, 0.7)' : 'rgba(54, 162, 235, 0.6)'),
-                    borderColor: data.map(v => v > 8 ? 'rgb(220, 53, 69)' : 'rgb(54, 162, 235)'),
-                    borderWidth: 1.5,
-                    borderRadius: 5,
-                    barPercentage: 0.7
+                    backgroundColor: data.map(v => v > 8 ? 'rgba(220, 53, 69, 0.75)' : 'rgba(13, 110, 253, 0.7)'),
+                    borderColor: data.map(v => v > 8 ? '#dc3545' : '#0d6efd'),
+                    borderWidth: 1,
+                    borderRadius: 6,
+                    barPercentage: 0.6
                 }]
             };
-            chartOptions.plugins = { legend: { display: false } };
-            chartOptions.animation = { duration: 750 };
-
+            chartConfig.options = { 
+                ...chartConfig.options,
+                plugins: { ...chartConfig.plugins, legend: { display: false } },
+                scales: { 
+                    y: { beginAtZero: true, title: { display: true, text: 'Saat / Gün' }, grid: { color: '#f1f5f9' } },
+                    x: { grid: { display: false } }
+                }
+            };
+            updateButtonStyles();
         } else {
-            // B) GENEL EKİP GRAFİĞİ (Statik)
+            // B) EKİP MODU: Planlanan vs Gerçekleşen
             const planned = JSON.parse(document.getElementById('chart-aggregate-planned').textContent);
             const spent = JSON.parse(document.getElementById('chart-aggregate-spent').textContent);
-            chartData = {
+            chartConfig.type = 'bar';
+            chartConfig.data = {
                 labels: labels,
                 datasets: [
-                    {
-                        label: 'Planlanan Toplam',
-                        data: planned,
-                        backgroundColor: 'rgba(13, 110, 253, 0.6)',
-                        borderColor: 'rgba(13, 110, 253, 1)',
-                        borderWidth: 1,
-                        borderRadius: 4
-                    },
-                    {
-                        label: 'Harcanan Toplam',
-                        data: spent,
-                        backgroundColor: 'rgba(255, 193, 7, 0.6)',
-                        borderColor: 'rgba(255, 193, 7, 1)',
-                        borderWidth: 1,
-                        borderRadius: 4
-                    }
+                    { label: 'Planlanan Toplam', data: planned, backgroundColor: 'rgba(71, 85, 105, 0.7)', borderRadius: 4 },
+                    { label: 'Gerçekleşen (Efor)', data: spent, backgroundColor: 'rgba(220, 53, 69, 0.7)', borderRadius: 4 }
                 ]
+            };
+            chartConfig.options = {
+                ...chartConfig.options,
+                scales: { y: { beginAtZero: true, title: { display: true, text: 'Toplam Saat' } } }
             };
         }
 
-        myChart = new Chart(ctx, { type: 'bar', data: chartData, options: chartOptions });
+        myChart = new Chart(ctx, chartConfig);
     });
 
-    // --- AJAX İŞLEMLERİ (Sadece Bireysel Modda Çalışır) ---
-    window.updateChart = function(strategy) {
-        currentStrategy = strategy;
-        fetchAndUpdateData();
-    };
-
-    window.updateRange = function(range) {
-        currentRange = range;
-        fetchAndUpdateData();
-    };
-
+    // 2. AJAX GÜNCELLEME SİSTEMİ (Sadece Bireysel Modda)
     function fetchAndUpdateData() {
-        if (currentUserId === 'all') return; // Genel modda filtreler çalışmaz
+        if (currentUserId === 'all') return;
 
         updateButtonStyles();
+        const start = document.getElementById('custom-start').value;
+        const end = document.getElementById('custom-end').value;
 
-        // Custom tarih
-        const startVal = document.getElementById('custom-start') ? document.getElementById('custom-start').value : '';
-        const endVal = document.getElementById('custom-end') ? document.getElementById('custom-end').value : '';
-
-        // URL Oluştur
         let url = `?user_id=${currentUserId}&strategy=${currentStrategy}&range=${currentRange}&ajax=true`;
-        if (currentRange === 'custom') url += `&start=${startVal}&end=${endVal}`;
+        if (currentRange === 'custom') url += `&start=${start}&end=${end}`;
 
-        // URL'i güncelle (History API)
         window.history.pushState({}, '', url.replace('&ajax=true', ''));
 
-        // Loading
         const container = document.getElementById('chart-container');
-        container.style.opacity = '0.5';
+        container.style.opacity = '0.3';
 
         fetch(url)
             .then(res => res.json())
             .then(data => {
                 if (myChart && data.type === 'individual') {
-                    // Veriyi Güncelle
                     myChart.data.labels = data.labels;
                     myChart.data.datasets[0].data = data.data;
-                    
-                    // Renkleri Güncelle
-                    const newColors = data.data.map(v => v > 8 ? 'rgba(220, 53, 69, 0.7)' : 'rgba(54, 162, 235, 0.6)');
-                    const newBorders = data.data.map(v => v > 8 ? 'rgb(220, 53, 69)' : 'rgb(54, 162, 235)');
-                    
-                    myChart.data.datasets[0].backgroundColor = newColors;
-                    myChart.data.datasets[0].borderColor = newBorders;
-                    
+                    myChart.data.datasets[0].backgroundColor = data.data.map(v => v > 8 ? 'rgba(220, 53, 69, 0.75)' : 'rgba(13, 110, 253, 0.7)');
+                    myChart.data.datasets[0].borderColor = data.data.map(v => v > 8 ? '#dc3545' : '#0d6efd');
                     myChart.update();
-                    
-                    // Badge Güncelle
-                    const algoBadge = document.getElementById('algo-badge');
-                    const stratNameMap = {
-                        'balanced': 'Dengeli',
-                        'priority_weighted': 'Öncelik Bazlı',
-                        'size_weighted': 'İş Büyüklüğü',
-                        'deadline_weighted': 'Vade Bazlı'
-                    };
-                    if(algoBadge) algoBadge.textContent = (stratNameMap[data.strategy] || 'Dengeli') + ' Algoritması';
+
+                    const badge = document.getElementById('algo-badge');
+                    const names = { 'balanced': 'Dengeli', 'priority_weighted': 'Öncelik', 'size_weighted': 'Büyüklük', 'deadline_weighted': 'Vade' };
+                    if(badge) badge.textContent = (names[data.strategy] || 'Dengeli') + ' Algoritması';
                 }
-                container.style.opacity = '1';
-            })
-            .catch(err => {
-                console.error(err);
                 container.style.opacity = '1';
             });
     }
 
-    function updateButtonStyles() {
-        document.querySelectorAll('.btn-filter, .btn-group button').forEach(btn => btn.classList.remove('active'));
-        
-        const stratBtn = document.getElementById(`btn-${currentStrategy}`);
-        if(stratBtn) stratBtn.classList.add('active');
+    // 3. EVENT HANDLERS
+    window.updateChart = (s) => { currentStrategy = s; fetchAndUpdateData(); };
+    window.updateRange = (r) => { currentRange = r; fetchAndUpdateData(); };
+    
+    function toggleCustomDates() {
+        const s = prompt("Başlangıç Tarihi (YYYY-MM-DD):", document.getElementById('custom-start').value);
+        const e = prompt("Bitiş Tarihi (YYYY-MM-DD):", document.getElementById('custom-end').value);
+        if(s && e) {
+            document.getElementById('custom-start').value = s;
+            document.getElementById('custom-end').value = e;
+            currentRange = 'custom';
+            fetchAndUpdateData();
+        }
+    }
 
-        const rangeBtn = document.getElementById(`btn-range-${currentRange}`);
-        if(rangeBtn) rangeBtn.classList.add('active');
+    function updateButtonStyles() {
+        document.querySelectorAll('.btn-filter').forEach(btn => btn.classList.remove('active'));
+        document.getElementById(`btn-${currentStrategy}`)?.classList.add('active');
+        document.getElementById(`btn-range-${currentRange}`)?.classList.add('active');
     }
 </script>
 {% endblock %}

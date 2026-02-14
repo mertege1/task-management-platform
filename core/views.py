@@ -6,10 +6,10 @@ from django.utils import timezone
 from datetime import timedelta, datetime
 from django.core.mail import send_mail
 from django.conf import settings
-from django.http import JsonResponse  # <--- EKLENDİ: AJAX yanıtı için
+from django.http import JsonResponse
 
-from .models import Task, RoadmapItem, CustomUser
-from .forms import TaskForm
+from .models import Task, RoadmapItem, CustomUser, WorkLog
+from .forms import TaskForm, WorkLogForm
 from .utils import calculate_workload_distribution
 
 @login_required
@@ -68,7 +68,7 @@ def employee_dashboard(request):
         })
     # ---------------------------------------
 
-    # Normal Sayfa Yüklemesi (AJAX değilse burası çalışır)
+    # Normal Sayfa Yüklemesi
     tasks = Task.objects.filter(
         Q(assigned_to=request.user) | Q(partners=request.user)
     ).distinct().order_by('due_date')
@@ -92,7 +92,6 @@ def employee_dashboard(request):
         Q(assigned_to=request.user) | Q(partners=request.user)
     ).distinct().order_by('due_date')
     
-    # İlk yükleme için grafik verisi
     chart_data = calculate_workload_distribution(
         request.user, 
         strategy=strategy,
@@ -123,14 +122,12 @@ def manager_dashboard(request):
     """
     today = timezone.now().date()
     
-    # Parametreleri Al
     selected_user_id = request.GET.get('user_id')
     strategy = request.GET.get('strategy', 'balanced')
     date_range = request.GET.get('range', 'month')
     start_str = request.GET.get('start')
     end_str = request.GET.get('end')
     
-    # Tarih Aralığı
     view_start = today
     view_end = today + timedelta(days=29)
 
@@ -173,7 +170,6 @@ def manager_dashboard(request):
         if is_overdue or is_urgent_start:
             delayed_tasks.append(task)
 
-    # Grafik Mantığı (Normal Yükleme)
     chart_context = {}
     if selected_user_id and selected_user_id != 'all':
         target_user = get_object_or_404(CustomUser, id=selected_user_id)
@@ -212,6 +208,51 @@ def manager_dashboard(request):
         'chart_context': chart_context,
     }
     return render(request, 'dashboard_manager.html', context)
+
+@login_required
+def task_detail(request, pk):
+    """
+    Görev Detayı ve Efor Girişi: 
+    Kullanıcılar kendi eforlarını buradan girerler ve spent_hours otomatik güncellenir.
+    """
+    task = get_object_or_404(Task, pk=pk)
+    today = timezone.now().date()
+    
+    # Efor Kaydı Formu İşleme
+    if request.method == 'POST' and 'worklog_submit' in request.POST:
+        is_partner = task.partners.filter(id=request.user.id).exists()
+        if task.assigned_to == request.user or is_partner:
+            log_form = WorkLogForm(request.POST)
+            if log_form.is_valid():
+                work_log = log_form.save(commit=False)
+                work_log.task = task
+                work_log.user = request.user
+                work_log.save()
+                
+                # Görevin toplam harcanan süresini tüm logları toplayarak güncelle
+                total_spent = WorkLog.objects.filter(task=task).aggregate(total=Sum('hours'))['total'] or 0
+                task.spent_hours = total_spent
+                task.save()
+                
+                messages.success(request, 'Çalışma kaydınız başarıyla eklendi.')
+                return redirect('task_detail', pk=task.pk)
+        else:
+            messages.error(request, 'Bu göreve efor girme yetkiniz yok.')
+            return redirect('task_detail', pk=task.pk)
+    else:
+        log_form = WorkLogForm(initial={'date': today})
+
+    # Bu göreve ait tüm efor geçmişi
+    work_logs = task.work_logs.all().select_related('user').order_by('-date', '-created_at')
+
+    context = {
+        'task': task, 
+        'page_title': f'Görev Detayı: {task.title}', 
+        'today': today,
+        'log_form': log_form, 
+        'work_logs': work_logs
+    }
+    return render(request, 'task_detail.html', context)
 
 @login_required
 def create_task(request):
@@ -253,12 +294,6 @@ def create_task(request):
         form = TaskForm(user=request.user)
 
     return render(request, 'task_form.html', {'form': form, 'page_title': 'Yeni Görev Oluştur'})
-
-@login_required
-def task_detail(request, pk):
-    task = get_object_or_404(Task, pk=pk)
-    today = timezone.now().date()
-    return render(request, 'task_detail.html', {'task': task, 'page_title': f'Görev Detayı: {task.title}', 'today': today})
 
 @login_required
 def update_task(request, pk):
