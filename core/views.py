@@ -3,9 +3,10 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Sum, Q
 from django.utils import timezone
-from datetime import timedelta, datetime # Tarih işlemleri için eklendi
+from datetime import timedelta, datetime
 from django.core.mail import send_mail
 from django.conf import settings
+from django.http import JsonResponse  # <--- EKLENDİ: AJAX yanıtı için
 
 from .models import Task, RoadmapItem, CustomUser
 from .forms import TaskForm
@@ -25,29 +26,26 @@ def home(request):
 def employee_dashboard(request):
     """
     Çalışan Paneli: 
-    1. Stratejiye ve Tarih Aralığına göre iş yükü grafiği.
-    2. Kendi görevleri ve uyarılar.
-    3. Bugünün işleri (Pop-up).
-    4. Ekip takibi.
+    AJAX desteği ile grafik verilerini dinamik döndürür.
     """
     today = timezone.now().date()
     
     # 1. URL Parametrelerini Yakala
     strategy = request.GET.get('strategy', 'balanced')
-    date_range = request.GET.get('range', 'month') # Varsayılan: 30 gün (Aylık)
+    date_range = request.GET.get('range', 'month')
     start_str = request.GET.get('start')
     end_str = request.GET.get('end')
 
     # 2. Tarih Aralığını Hesapla
     view_start = today
-    view_end = today + timedelta(days=29) # Varsayılan Bitiş (1 Ay)
+    view_end = today + timedelta(days=29)
 
     if date_range == 'custom' and start_str and end_str:
         try:
             view_start = datetime.strptime(start_str, '%Y-%m-%d').date()
             view_end = datetime.strptime(end_str, '%Y-%m-%d').date()
         except ValueError:
-            pass # Hata varsa varsayılana dön
+            pass
     elif date_range == 'week':
         view_end = view_start + timedelta(days=6)
     elif date_range == 'month':
@@ -55,12 +53,26 @@ def employee_dashboard(request):
     elif date_range == 'year':
         view_end = view_start + timedelta(days=364)
 
-    # 3. Kendi Aktif Görevleri (Sorumlu veya Ortak)
+    # --- AJAX İSTEĞİ İSE SADECE JSON DÖN ---
+    if request.GET.get('ajax') == 'true':
+        chart_data = calculate_workload_distribution(
+            request.user, 
+            strategy=strategy,
+            view_start=view_start,
+            view_end=view_end
+        )
+        return JsonResponse({
+            'labels': chart_data['labels'],
+            'data': chart_data['data'],
+            'strategy': strategy
+        })
+    # ---------------------------------------
+
+    # Normal Sayfa Yüklemesi (AJAX değilse burası çalışır)
     tasks = Task.objects.filter(
         Q(assigned_to=request.user) | Q(partners=request.user)
     ).distinct().order_by('due_date')
     
-    # 4. Uyarı Sistemi
     alerts = []
     for task in tasks:
         if task.status not in ['tamamlandi', 'iptal']:
@@ -69,20 +81,18 @@ def employee_dashboard(request):
             elif (task.due_date - today).days <= 2:
                 alerts.append({'task': task, 'type': 'warning', 'msg': 'Yaklaşıyor!'})
 
-    # 5. Bugünün İşleri (Pop-up için)
     today_tasks = tasks.filter(
         start_date__lte=today,
         due_date__gte=today
     ).exclude(status__in=['tamamlandi', 'iptal'])
 
-    # 6. Ekip Arkadaşlarının Görevleri
     teammate_tasks = Task.objects.filter(
         assigned_to__team=request.user.team
     ).exclude(
         Q(assigned_to=request.user) | Q(partners=request.user)
     ).distinct().order_by('due_date')
     
-    # 7. GRAFİK HESAPLAMA (Tarih Aralığı İle)
+    # İlk yükleme için grafik verisi
     chart_data = calculate_workload_distribution(
         request.user, 
         strategy=strategy,
@@ -100,7 +110,7 @@ def employee_dashboard(request):
         'chart_data': chart_data['data'],
         'current_strategy': strategy,
         'current_range': date_range,
-        'start_date_val': view_start.strftime('%Y-%m-%d'), # Formda göstermek için
+        'start_date_val': view_start.strftime('%Y-%m-%d'),
         'end_date_val': view_end.strftime('%Y-%m-%d'),
         'today': today,
     }
@@ -109,21 +119,18 @@ def employee_dashboard(request):
 @login_required
 def manager_dashboard(request):
     """
-    Yönetici Paneli: 
-    1. Personel seçilirse: O personelin detaylı iş yükü grafiği (Tarih ve Strateji bazlı).
-    2. Personel seçilmezse: Genel ekip karşılaştırma grafiği.
+    Yönetici Paneli: AJAX desteği ile dinamik grafik.
     """
     today = timezone.now().date()
-    tasks = Task.objects.all().order_by('due_date')
     
-    # URL Parametreleri
+    # Parametreleri Al
     selected_user_id = request.GET.get('user_id')
     strategy = request.GET.get('strategy', 'balanced')
     date_range = request.GET.get('range', 'month')
     start_str = request.GET.get('start')
     end_str = request.GET.get('end')
     
-    # Tarih Aralığı Hesapla
+    # Tarih Aralığı
     view_start = today
     view_end = today + timedelta(days=29)
 
@@ -131,8 +138,7 @@ def manager_dashboard(request):
         try:
             view_start = datetime.strptime(start_str, '%Y-%m-%d').date()
             view_end = datetime.strptime(end_str, '%Y-%m-%d').date()
-        except ValueError:
-            pass
+        except ValueError: pass
     elif date_range == 'week':
         view_end = view_start + timedelta(days=6)
     elif date_range == 'month':
@@ -140,6 +146,24 @@ def manager_dashboard(request):
     elif date_range == 'year':
         view_end = view_start + timedelta(days=364)
     
+    # --- AJAX İSTEĞİ (Manager) ---
+    if request.GET.get('ajax') == 'true' and selected_user_id and selected_user_id != 'all':
+        target_user = get_object_or_404(CustomUser, id=selected_user_id)
+        workload = calculate_workload_distribution(
+            target_user, 
+            strategy=strategy, 
+            view_start=view_start, 
+            view_end=view_end
+        )
+        return JsonResponse({
+            'type': 'individual',
+            'labels': workload['labels'],
+            'data': workload['data'],
+            'strategy': strategy
+        })
+    # -----------------------------
+
+    tasks = Task.objects.all().order_by('due_date')
     employees = CustomUser.objects.filter(role='employee')
 
     delayed_tasks = []
@@ -149,54 +173,30 @@ def manager_dashboard(request):
         if is_overdue or is_urgent_start:
             delayed_tasks.append(task)
 
-    # GRAFİK MANTIĞI
+    # Grafik Mantığı (Normal Yükleme)
     chart_context = {}
-    
     if selected_user_id and selected_user_id != 'all':
-        # DURUM A: TEK PERSONEL ANALİZİ (İş Yükü Dağılımı)
         target_user = get_object_or_404(CustomUser, id=selected_user_id)
-        
-        # Güncellenmiş utils fonksiyonunu çağırıyoruz
         workload = calculate_workload_distribution(
             target_user, 
             strategy=strategy,
             view_start=view_start,
             view_end=view_end
         )
-        
-        chart_context = {
-            'type': 'individual',
-            'labels': workload['labels'],
-            'data': workload['data'],
-            'user': target_user
-        }
+        chart_context = {'type': 'individual', 'labels': workload['labels'], 'data': workload['data'], 'user': target_user}
     else:
-        # DURUM B: GENEL EKİP KIYASLAMASI (Toplam Planlanan vs Harcanan)
         employee_names = []
         planned_data = []
         spent_data = []
-        
         for user in employees:
-            stats = Task.objects.filter(
-                Q(assigned_to=user) | Q(partners=user)
-            ).distinct().aggregate(
-                total_planned=Sum('planned_hours'),
-                total_spent=Sum('spent_hours')
-            )
-            p_hours = float(stats['total_planned'] or 0)
-            s_hours = float(stats['total_spent'] or 0)
-            
-            if p_hours > 0 or s_hours > 0:
+            stats = Task.objects.filter(Q(assigned_to=user) | Q(partners=user)).distinct().aggregate(total_planned=Sum('planned_hours'), total_spent=Sum('spent_hours'))
+            p = float(stats['total_planned'] or 0)
+            s = float(stats['total_spent'] or 0)
+            if p > 0 or s > 0:
                 employee_names.append(user.get_full_name() or user.username)
-                planned_data.append(p_hours)
-                spent_data.append(s_hours)
-        
-        chart_context = {
-            'type': 'aggregate',
-            'labels': employee_names,
-            'planned': planned_data,
-            'spent': spent_data
-        }
+                planned_data.append(p)
+                spent_data.append(s)
+        chart_context = {'type': 'aggregate', 'labels': employee_names, 'planned': planned_data, 'spent': spent_data}
 
     context = {
         'tasks': tasks,

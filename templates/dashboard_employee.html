@@ -2,6 +2,79 @@
 
 {% block title %}{{ page_title }}{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* Modern Kart Tasarımı */
+    .dashboard-card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+        transition: transform 0.2s;
+        background-color: white;
+    }
+    
+    .dashboard-card:hover {
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    }
+
+    /* Avatar Stili */
+    .avatar-circle {
+        width: 36px;
+        height: 36px;
+        background-color: #eef2f6;
+        color: #5b6b79;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.85rem;
+        margin-right: 10px;
+    }
+
+    /* Tablo Düzenlemeleri */
+    .table-modern thead th {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #9ca3af;
+        font-weight: 600;
+        border-bottom: 1px solid #f3f4f6;
+        padding-bottom: 12px;
+    }
+    
+    .table-modern tbody td {
+        padding: 16px 8px;
+        border-bottom: 1px solid #f9fafb;
+        vertical-align: middle;
+    }
+
+    /* Filtre Butonları */
+    .btn-filter {
+        border: 1px solid #e5e7eb;
+        background-color: white;
+        color: #4b5563;
+        font-size: 0.85rem;
+        padding: 6px 12px;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .btn-filter:hover {
+        background-color: #f9fafb;
+    }
+
+    .btn-filter.active {
+        background-color: #eff6ff;
+        color: #0d6efd;
+        border-color: #bfdbfe;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 
 <!-- 1. BÖLÜM: UYARI SİSTEMİ -->
@@ -9,80 +82,111 @@
 <div class="row mb-4">
     <div class="col-12">
         {% for alert in alerts %}
-        <div class="alert alert-{{ alert.type }} alert-dismissible fade show d-flex align-items-center shadow-sm border-0" role="alert">
-            <i class="fas {% if alert.type == 'danger' %}fa-exclamation-circle text-danger{% else %}fa-clock text-warning{% endif %} me-3 fa-lg"></i>
-            <div>
-                <strong>{{ alert.msg }}</strong> "{{ alert.task.title }}" görevinin tamamlanma tarihi: {{ alert.task.due_date }}
+        <div class="alert alert-{{ alert.type }} shadow-sm border-0 d-flex align-items-center rounded-3 mb-2" role="alert">
+            <div class="p-2 me-3 rounded-circle bg-white text-{{ alert.type }}">
+                <i class="fas {% if alert.type == 'danger' %}fa-exclamation-triangle{% else %}fa-clock{% endif %}"></i>
             </div>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            <div>
+                <h6 class="alert-heading mb-0 fw-bold">{{ alert.msg }}</h6>
+                <small>"{{ alert.task.title }}" görevinin teslim tarihi: {{ alert.task.due_date|date:"d M Y" }}</small>
+            </div>
+            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
         {% endfor %}
     </div>
 </div>
 {% endif %}
 
-<!-- ÜST BAŞLIK VE BUTONLAR -->
-<div class="row mb-4 align-items-center">
-    <div class="col-md-8">
-        <h2 class="fw-bold"><i class="fas fa-user-tie text-primary me-2"></i> {{ page_title }}</h2>
-        <p class="text-muted mb-0">Kendi görevleriniz, ortak işleriniz ve ekip arkadaşlarınızın durumu.</p>
+<!-- ÜST BAŞLIK ALANI -->
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-5">
+    <div>
+        <h2 class="fw-bold text-dark mb-1">Görev Kontrol Paneli</h2>
+        <p class="text-muted mb-0">
+            <i class="far fa-calendar-alt me-1"></i> {{ today|date:"d F Y, l" }} 
+            <span class="mx-2">•</span> 
+            <span class="badge bg-primary-subtle text-primary">Aktif Dönem</span>
+        </p>
     </div>
-    <div class="col-md-4 text-end">
-        <button type="button" class="btn btn-outline-info me-2 shadow-sm" data-bs-toggle="modal" data-bs-target="#todayTasksModal">
-            <i class="fas fa-calendar-day"></i> Bugünün İşleri
+    <div class="mt-3 mt-md-0 d-flex gap-2">
+        <button type="button" class="btn btn-white border shadow-sm text-secondary" data-bs-toggle="modal" data-bs-target="#todayTasksModal">
+            <i class="fas fa-list-check me-2"></i>Bugünün İşleri
         </button>
-        <a href="{% url 'create_task' %}" class="btn btn-primary shadow-sm">
-            <i class="fas fa-plus-circle"></i> Yeni Görev Oluştur
+        <a href="{% url 'create_task' %}" class="btn btn-primary shadow-sm px-4">
+            <i class="fas fa-plus me-2"></i>Yeni Görev
         </a>
     </div>
 </div>
 
 <!-- 2. BÖLÜM: KENDİ GÖREVLERİM TABLOSU -->
-<div class="card shadow-sm mb-5 border-0">
-    <div class="card-header bg-white py-3 border-bottom">
-        <h5 class="mb-0 fw-bold text-dark"><i class="fas fa-clipboard-list text-primary me-2"></i> Aktif Görevlerim ve Ortaklıklar</h5>
+<div class="dashboard-card mb-5">
+    <div class="card-header bg-white border-0 pt-4 pb-2 px-4 d-flex justify-content-between align-items-center">
+        <h5 class="fw-bold mb-0">Aktif Görevlerim ve Ortaklıklar</h5>
+        <span class="badge bg-light text-secondary rounded-pill px-3">{{ tasks.count }} Adet</span>
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="bg-light text-muted small text-uppercase">
+            <table class="table table-modern table-hover mb-0">
+                <thead class="bg-light">
                     <tr>
-                        <th class="ps-4">İş Tanımı</th>
-                        <th>Öncelik</th>
-                        <th>Son Tarih</th>
-                        <th>Durum</th>
-                        <th class="text-end pe-4">İşlemler</th>
+                        <th class="ps-4">GÖREV DETAYI</th>
+                        <th>ÖNCELİK</th>
+                        <th>TESLİM TARİHİ</th>
+                        <th>DURUM</th>
+                        <th class="text-end pe-4">İŞLEMLER</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for task in tasks %}
                     <tr>
                         <td class="ps-4">
-                            <div class="fw-bold text-dark">{{ task.title }}</div>
-                            <small class="text-muted">
-                                {% if task.assigned_to == user %}
-                                <i class="fas fa-user-check text-success me-1"></i> Sorumlusunuz
-                                {% else %}
-                                <i class="fas fa-user-friends text-info me-1"></i> İş Ortağısınız
-                                {% endif %}
-                            </small>
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-circle bg-primary-subtle text-primary">
+                                    {{ task.title|first|upper }}
+                                </div>
+                                <div>
+                                    <div class="fw-bold text-dark">{{ task.title }}</div>
+                                    <small class="text-muted d-block" style="font-size: 0.75rem;">
+                                        {% if task.assigned_to == user %}
+                                        <i class="fas fa-user-check text-success me-1"></i> Sorumlu Sizsiniz
+                                        {% else %}
+                                        <i class="fas fa-user-friends text-info me-1"></i> İş Ortağısınız
+                                        {% endif %}
+                                    </small>
+                                </div>
+                            </div>
                         </td>
                         <td>
-                            <span class="badge bg-{% if task.priority == 'yuksek' %}danger{% elif task.priority == 'orta' %}warning{% else %}success{% endif %}">{{ task.get_priority_display }}</span>
+                            {% if task.priority == 'yuksek' %}
+                                <span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle px-3">Yüksek</span>
+                            {% elif task.priority == 'orta' %}
+                                <span class="badge rounded-pill bg-warning-subtle text-warning-emphasis border border-warning-subtle px-3">Orta</span>
+                            {% else %}
+                                <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-3">Düşük</span>
+                            {% endif %}
                         </td>
                         <td>
-                            <span class="{% if task.due_date < today %}text-danger fw-bold{% endif %}">
-                                {{ task.due_date|date:"d M Y" }}
-                            </span>
+                            <div class="d-flex align-items-center">
+                                <i class="far fa-clock me-2 {% if task.due_date < today %}text-danger{% else %}text-muted{% endif %}"></i>
+                                <span class="{% if task.due_date < today %}text-danger fw-bold{% else %}text-dark{% endif %}">
+                                    {{ task.due_date|date:"d M Y" }}
+                                </span>
+                            </div>
                         </td>
-                        <td><span class="badge bg-secondary-subtle text-secondary border">{{ task.get_status_display }}</span></td>
+                        <td>
+                            <span class="badge bg-light text-dark border fw-normal">{{ task.get_status_display }}</span>
+                        </td>
                         <td class="text-end pe-4">
-                            <a href="{% url 'task_detail' task.pk %}" class="btn btn-sm btn-primary px-3">Detay / Güncelle</a>
+                            <a href="{% url 'task_detail' task.pk %}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                İncele &rarr;
+                            </a>
                         </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="5" class="text-center py-5 text-muted fst-italic">Aktif bir göreviniz bulunmuyor.</td>
+                        <td colspan="5" class="text-center py-5">
+                            <div class="text-muted opacity-50 mb-2"><i class="fas fa-clipboard-check fa-3x"></i></div>
+                            <p class="text-muted mb-0">Şu anda üzerinde çalıştığınız aktif bir görev bulunmuyor.</p>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -91,104 +195,119 @@
     </div>
 </div>
 
-<!-- 3. BÖLÜM: OPTİMİZE EDİLMİŞ İŞ YÜKÜ GRAFİĞİ -->
-<div class="card shadow-sm border-0 mb-5">
-    <div class="card-header bg-white border-bottom py-3 px-4">
-        <div class="row align-items-center">
-            <div class="col-lg-3 mb-2 mb-lg-0">
-                <h5 class="mb-0 fw-bold"><i class="fas fa-chart-line text-info me-2"></i>İş Yükü</h5>
-                <small class="text-muted">Planlama ve Analiz</small>
-            </div>
-            
-            <div class="col-lg-9 text-lg-end">
-                <div class="d-flex flex-wrap justify-content-lg-end gap-3 align-items-center">
-                    
-                    <!-- ALGORİTMA SEÇİCİ -->
-                    <form method="get" class="d-inline-block">
-                        <input type="hidden" name="range" value="{{ current_range|default:'month' }}">
-                        <input type="hidden" name="start" value="{{ start_date_val }}">
-                        <input type="hidden" name="end" value="{{ end_date_val }}">
-                        
-                        <span class="small fw-bold text-muted me-1">STRATEJİ:</span>
-                        <div class="btn-group btn-group-sm shadow-sm">
-                            <button type="submit" name="strategy" value="balanced" class="btn btn-outline-primary {% if current_strategy == 'balanced' or not current_strategy %}active{% endif %}">Dengeli</button>
-                            <button type="submit" name="strategy" value="priority_weighted" class="btn btn-outline-primary {% if current_strategy == 'priority_weighted' %}active{% endif %}">Öncelik</button>
-                            <button type="submit" name="strategy" value="size_weighted" class="btn btn-outline-primary {% if current_strategy == 'size_weighted' %}active{% endif %}">Büyüklük</button>
-                            <button type="submit" name="strategy" value="deadline_weighted" class="btn btn-outline-primary {% if current_strategy == 'deadline_weighted' %}active{% endif %}">Vade</button>
+<!-- 3. BÖLÜM: OPTİMİZE EDİLMİŞ İŞ YÜKÜ GRAFİĞİ (AJAX DESTEKLİ) -->
+<div class="row mb-5">
+    <div class="col-12">
+        <div class="dashboard-card h-100">
+            <div class="card-header bg-white border-bottom d-flex flex-wrap justify-content-between align-items-center py-3 px-4 gap-3">
+                <div>
+                    <h5 class="fw-bold mb-1"><i class="fas fa-chart-line text-info me-2"></i>İş Yükü Analizi</h5>
+                    <small class="text-muted">Gelecek planlaması ve kapasite kullanım grafiği.</small>
+                </div>
+                
+                <div class="d-flex flex-wrap gap-3 justify-content-end align-items-center">
+                    <!-- Algoritma Filtreleri (Butonlar) -->
+                    <div class="d-flex bg-light rounded p-1 border">
+                        <span class="small fw-bold text-muted me-2 align-self-center ps-2">ALGORİTMA:</span>
+                        <div class="btn-group btn-group-sm shadow-sm" role="group">
+                            <button type="button" onclick="updateChart('balanced')" id="btn-balanced" class="btn btn-sm btn-filter border-0 rounded active" title="Dengeli Dağıtım">
+                                <i class="fas fa-balance-scale"></i> Dengeli
+                            </button>
+                            <button type="button" onclick="updateChart('priority_weighted')" id="btn-priority_weighted" class="btn btn-sm btn-filter border-0 rounded" title="Öncelik Bazlı">
+                                <i class="fas fa-flag"></i> Öncelik
+                            </button>
+                            <button type="button" onclick="updateChart('size_weighted')" id="btn-size_weighted" class="btn btn-sm btn-filter border-0 rounded" title="İş Büyüklüğü">
+                                <i class="fas fa-weight-hanging"></i> Büyüklük
+                            </button>
+                            <button type="button" onclick="updateChart('deadline_weighted')" id="btn-deadline_weighted" class="btn btn-sm btn-filter border-0 rounded" title="Teslim Tarihi Bazlı">
+                                <i class="fas fa-hourglass-half"></i> Vade
+                            </button>
                         </div>
-                    </form>
+                    </div>
 
-                    <!-- TARİH ARALIĞI SEÇİCİ (ÖZEL TARİH DAHİL) -->
-                    <form method="get" class="d-inline-flex align-items-center bg-light rounded p-1 border">
-                        <input type="hidden" name="strategy" value="{{ current_strategy|default:'balanced' }}">
+                    <!-- Tarih Filtreleri -->
+                    <div class="d-flex align-items-center bg-light rounded p-1 border">
+                        <span class="small fw-bold text-muted me-2 ps-2">ZAMAN:</span>
                         
                         <!-- Hazır Aralıklar -->
                         <div class="btn-group btn-group-sm me-2">
-                            <button type="submit" name="range" value="week" class="btn btn-outline-secondary bg-white text-dark {% if current_range == 'week' %}active{% endif %}">Hafta</button>
-                            <button type="submit" name="range" value="month" class="btn btn-outline-secondary bg-white text-dark {% if current_range == 'month' or not current_range %}active{% endif %}">Ay</button>
-                            <button type="submit" name="range" value="year" class="btn btn-outline-secondary bg-white text-dark {% if current_range == 'year' %}active{% endif %}">Yıl</button>
+                            <button type="button" onclick="updateRange('week')" id="btn-range-week" class="btn btn-sm btn-outline-secondary bg-white text-dark border-0">Hafta</button>
+                            <button type="button" onclick="updateRange('month')" id="btn-range-month" class="btn btn-sm btn-outline-secondary bg-white text-dark border-0 active">Ay</button>
+                            <button type="button" onclick="updateRange('year')" id="btn-range-year" class="btn btn-sm btn-outline-secondary bg-white text-dark border-0">Yıl</button>
                         </div>
-
-                        <!-- Özel Tarih Seçici -->
-                        <div class="input-group input-group-sm">
-                            <input type="date" name="start" class="form-control form-control-sm border-0 ps-1 pe-1" value="{{ start_date_val }}" required style="width: 110px;">
-                            <span class="input-group-text border-0 bg-transparent px-0">-</span>
-                            <input type="date" name="end" class="form-control form-control-sm border-0 ps-1 pe-1" value="{{ end_date_val }}" required style="width: 110px;">
-                            <button type="submit" name="range" value="custom" class="btn btn-primary btn-sm rounded-end" title="Filtrele">
+                        
+                        <!-- Özel Tarih (Inputlar) -->
+                        <div class="d-flex bg-white border rounded ms-2 overflow-hidden align-items-center">
+                            <input type="date" id="custom-start" class="form-control form-control-sm border-0 shadow-none ps-2" value="{{ start_date_val }}" style="width: 110px; font-size: 0.8rem;">
+                            <span class="text-muted small">-</span>
+                            <input type="date" id="custom-end" class="form-control form-control-sm border-0 shadow-none border-start-0" value="{{ end_date_val }}" style="width: 110px; font-size: 0.8rem;">
+                            <button type="button" onclick="updateRange('custom')" class="btn btn-sm btn-light border-start text-primary px-3" title="Filtrele">
                                 <i class="fas fa-filter"></i>
                             </button>
                         </div>
-                    </form>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card-body p-4">
+                <!-- Grafik Konteyneri -->
+                <div style="height: 350px; width: 100%; transition: opacity 0.3s ease;" id="chart-container">
+                    <canvas id="workloadChart"></canvas>
+                </div>
+                <!-- Bilgi Metni -->
+                <div class="mt-3 d-flex align-items-center text-muted small bg-light p-2 rounded" id="chart-info-box">
+                    <i class="fas fa-info-circle text-primary me-2"></i>
+                    <span>
+                        <strong>Algoritma: <span id="chart-algo-name">Dengeli</span> Dağılım</strong> | 
+                        Günlük mesai (8 saat) üzerindeki yüklemeler <span class="text-danger fw-bold">kırmızı</span> renk ile gösterilir.
+                    </span>
                 </div>
             </div>
         </div>
     </div>
-    <div class="card-body">
-        <div style="height: 350px;">
-            <canvas id="workloadChart"></canvas>
-        </div>
-        <div class="alert alert-light mt-3 mb-0 small border-0 text-muted">
-            <i class="fas fa-info-circle me-1"></i> 
-            <strong>{{ current_strategy|default:"Dengeli"|title }} Dağılım</strong> - 
-            {{ start_date_val }} ile {{ end_date_val }} arasındaki iş yükü görüntüleniyor.
-            (8 saati aşan günler <span class="text-danger fw-bold">kırmızı</span> işaretlenir).
-        </div>
-    </div>
 </div>
 
-<!-- 4. BÖLÜM: EKİP ARKADAŞLARININ GÖREVLERİ (SADECE GÖRÜNTÜLEME) -->
-<div class="card shadow-sm mb-4 border-0">
-    <div class="card-header bg-light py-3 border-bottom">
-        <h5 class="mb-0 fw-bold text-secondary"><i class="fas fa-users me-2"></i> Ekip Arkadaşlarının Mevcut İşleri</h5>
+<!-- 4. BÖLÜM: EKİP ARKADAŞLARININ GÖREVLERİ -->
+<div class="dashboard-card mb-5">
+    <div class="card-header bg-white border-0 pt-4 pb-2 px-4">
+        <h5 class="fw-bold mb-0 text-secondary"><i class="fas fa-users me-2"></i>Ekip Arkadaşlarım Ne Yapıyor?</h5>
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table table-sm table-hover align-middle mb-0">
-                <thead class="bg-white text-muted small text-uppercase">
+            <table class="table table-modern table-hover mb-0">
+                <thead class="bg-light">
                     <tr>
-                        <th class="ps-4">Çalışan</th>
-                        <th>İş Tanımı</th>
-                        <th>Durum</th>
-                        <th class="text-end pe-4">Görüntüle</th>
+                        <th class="ps-4">ÇALIŞAN</th>
+                        <th>GÖREV</th>
+                        <th>DURUM</th>
+                        <th class="text-end pe-4">GÖRÜNTÜLE</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for t_task in teammate_tasks %}
                     <tr>
-                        <td class="ps-4 text-dark">
-                            <i class="fas fa-user-circle text-muted me-1"></i> 
-                            {{ t_task.assigned_to.get_full_name|default:t_task.assigned_to.username }}
+                        <td class="ps-4">
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-circle bg-secondary-subtle text-dark border">
+                                    {{ t_task.assigned_to.first_name|first|default:t_task.assigned_to.username|first|upper }}
+                                </div>
+                                <span class="fw-medium text-dark">{{ t_task.assigned_to.get_full_name|default:t_task.assigned_to.username }}</span>
+                            </div>
                         </td>
-                        <td>{{ t_task.title }}</td>
-                        <td><span class="badge bg-light text-dark border">{{ t_task.get_status_display }}</span></td>
+                        <td>{{ t_task.title|truncatechars:50 }}</td>
+                        <td><span class="badge bg-white text-dark border fw-normal">{{ t_task.get_status_display }}</span></td>
                         <td class="text-end pe-4">
-                            <a href="{% url 'task_detail' t_task.pk %}" class="btn btn-sm btn-link text-decoration-none">
-                                <i class="fas fa-eye"></i>
+                            <a href="{% url 'task_detail' t_task.pk %}" class="btn btn-sm btn-link text-decoration-none text-muted">
+                                <i class="far fa-eye"></i> Detay
                             </a>
                         </td>
                     </tr>
                     {% empty %}
-                    <tr><td colspan="4" class="text-center py-4 text-muted">Ekipte başka aktif iş bulunamadı.</td></tr>
+                    <tr>
+                        <td colspan="4" class="text-center py-4 text-muted fst-italic">
+                            Ekip arkadaşlarınızın şu an aktif bir görevi bulunmuyor.
+                        </td>
+                    </tr>
                     {% endfor %}
                 </tbody>
             </table>
@@ -196,44 +315,44 @@
     </div>
 </div>
 
-<!-- POP-UP MODAL: BUGÜNÜN İŞ LİSTESİ -->
+<!-- POP-UP MODAL: BUGÜNÜN İŞ LİSTESİ (MODERN) -->
 <div class="modal fade" id="todayTasksModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content shadow-lg border-0">
-            <div class="modal-header bg-primary text-white border-0">
-                <h5 class="modal-title"><i class="fas fa-calendar-check me-2"></i>Bugün Yapılacaklar</h5>
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 15px;">
+            <div class="modal-header bg-primary text-white border-0" style="border-radius: 15px 15px 0 0;">
+                <h5 class="modal-title fw-bold"><i class="fas fa-calendar-check me-2"></i>Bugünün Ajandası</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body p-4">
+            <div class="modal-body p-0">
                 {% if today_tasks %}
-                <p class="text-muted small mb-3">Bugün ({{ today|date:"d F" }}) ilgilenmeniz gereken görevler:</p>
-                <div class="list-group list-group-flush">
-                    {% for t_task in today_tasks %}
-                    <div class="list-group-item px-0 border-0 mb-2">
-                        <div class="d-flex w-100 justify-content-between align-items-center">
-                            <h6 class="mb-1 fw-bold text-dark">{{ t_task.title }}</h6>
-                            <span class="badge bg-info-subtle text-info border border-info">{{ t_task.get_priority_display }}</span>
-                        </div>
-                        <p class="mb-1 small text-muted">{{ t_task.description|truncatechars:80 }}</p>
-                        <a href="{% url 'task_detail' t_task.pk %}" class="text-primary small fw-bold text-decoration-none">Detaya Git &rarr;</a>
+                    <div class="list-group list-group-flush">
+                        {% for t_task in today_tasks %}
+                        <a href="{% url 'task_detail' t_task.pk %}" class="list-group-item list-group-item-action p-4 border-bottom-0 border-top">
+                            <div class="d-flex w-100 justify-content-between align-items-center mb-1">
+                                <h6 class="mb-0 fw-bold text-primary">{{ t_task.title }}</h6>
+                                <span class="badge bg-light text-dark border">{{ t_task.get_priority_display }}</span>
+                            </div>
+                            <p class="mb-1 text-muted small">{{ t_task.description|truncatechars:80 }}</p>
+                            <small class="text-success"><i class="far fa-clock me-1"></i> Bitiş: {{ t_task.due_date|date:"d M" }}</small>
+                        </a>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
-                </div>
                 {% else %}
-                <div class="text-center py-4">
-                    <i class="fas fa-mug-hot fa-3x text-secondary opacity-25 mb-3"></i>
-                    <p class="text-muted">Bugün için planlanmış bir işiniz görünmüyor.</p>
-                </div>
+                    <div class="text-center py-5">
+                        <div class="mb-3 text-success opacity-50"><i class="fas fa-mug-hot fa-4x"></i></div>
+                        <h6 class="fw-bold text-dark">Harika Haber!</h6>
+                        <p class="text-muted mb-0">Bugün teslim etmeniz gereken acil bir iş görünmüyor.</p>
+                    </div>
                 {% endif %}
             </div>
-            <div class="modal-footer border-0 bg-light">
-                <button type="button" class="btn btn-secondary w-100" data-bs-dismiss="modal">Kapat</button>
+            <div class="modal-footer border-0 bg-light" style="border-radius: 0 0 15px 15px;">
+                <button type="button" class="btn btn-secondary px-4 rounded-pill" data-bs-dismiss="modal">Kapat</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- VERİ AKTARIMI -->
+<!-- VERİ AKTARIMI (Başlangıç Verisi) -->
 {{ chart_labels|json_script:"chart-labels-data" }}
 {{ chart_data|json_script:"chart-data-source" }}
 
@@ -242,8 +361,153 @@
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+    // --- GLOBAL DEĞİŞKENLER ---
+    let myChart = null;
+    let currentStrategy = '{{ current_strategy|default:"balanced" }}';
+    let currentRange = '{{ current_range|default:"month" }}';
+
+    // --- 1. GRAFİK BAŞLATMA FONKSİYONU ---
+    function initChart(labels, data) {
+        const ctx = document.getElementById('workloadChart').getContext('2d');
+        
+        // Renkler (8 saati aşanlar kırmızı)
+        const bgColors = data.map(v => v > 8 ? 'rgba(220, 53, 69, 0.7)' : 'rgba(13, 110, 253, 0.6)');
+        const borderColors = data.map(v => v > 8 ? 'rgb(220, 53, 69)' : 'rgb(13, 110, 253)');
+
+        myChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Günlük Planlanan Saat',
+                    data: data,
+                    backgroundColor: bgColors,
+                    borderColor: borderColors,
+                    borderWidth: 1.5,
+                    borderRadius: 5,
+                    barPercentage: 0.7
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: {
+                    duration: 750, // Akışkan geçiş süresi
+                    easing: 'easeOutQuart'
+                },
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        title: { display: true, text: 'Saat / Gün' },
+                        grid: { color: '#f0f0f0' }
+                    },
+                    x: { grid: { display: false } }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+
+    // --- 2. AJAX İLE VERİ GÜNCELLEME ---
+    function fetchAndUpdateData() {
+        // Buton stillerini güncelle
+        updateButtonStyles();
+
+        // Custom tarih değerleri
+        const startVal = document.getElementById('custom-start').value;
+        const endVal = document.getElementById('custom-end').value;
+
+        // URL Parametreleri
+        let url = `?strategy=${currentStrategy}&range=${currentRange}&ajax=true`;
+        if (currentRange === 'custom') {
+            url += `&start=${startVal}&end=${endVal}`;
+        }
+
+        // URL'i güncelle (Sayfa yenilenmeden tarayıcı geçmişine işle)
+        const displayUrl = url.replace('&ajax=true', '');
+        window.history.pushState({}, '', displayUrl);
+
+        // Loading Efekti
+        const chartContainer = document.getElementById('chart-container');
+        if(chartContainer) chartContainer.style.opacity = '0.5';
+
+        // Fetch İsteği
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                if (myChart) {
+                    // Verileri güncelle
+                    myChart.data.labels = data.labels;
+                    myChart.data.datasets[0].data = data.data;
+                    
+                    // Renkleri yeniden hesapla
+                    const newColors = data.data.map(v => v > 8 ? 'rgba(220, 53, 69, 0.7)' : 'rgba(13, 110, 253, 0.6)');
+                    const newBorders = data.data.map(v => v > 8 ? 'rgb(220, 53, 69)' : 'rgb(13, 110, 253)');
+                    
+                    myChart.data.datasets[0].backgroundColor = newColors;
+                    myChart.data.datasets[0].borderColor = newBorders;
+
+                    // Chart'ı YENİLE
+                    myChart.update();
+                } else {
+                    // Chart yoksa oluştur
+                    initChart(data.labels, data.data);
+                }
+
+                // Bilgi metnini güncelle
+                const stratNameMap = {
+                    'balanced': 'Dengeli',
+                    'priority_weighted': 'Öncelik Bazlı',
+                    'size_weighted': 'İş Büyüklüğü',
+                    'deadline_weighted': 'Vade Bazlı'
+                };
+                const name = stratNameMap[data.strategy] || 'Dengeli';
+                const infoSpan = document.getElementById('chart-algo-name');
+                if(infoSpan) infoSpan.textContent = name;
+
+                // Loading bitiş
+                if(chartContainer) chartContainer.style.opacity = '1';
+            })
+            .catch(error => {
+                console.error('Veri hatası:', error);
+                if(chartContainer) chartContainer.style.opacity = '1';
+            });
+    }
+
+    // --- 3. BUTON AKSİYONLARI ---
+    // HTML'den çağrılacak global fonksiyonlar
+    window.updateChart = function(strategy) {
+        currentStrategy = strategy;
+        fetchAndUpdateData();
+    };
+
+    window.updateRange = function(range) {
+        currentRange = range;
+        fetchAndUpdateData();
+    };
+
+    function updateButtonStyles() {
+        // Tüm aktif sınıfları temizle
+        document.querySelectorAll('.btn-filter, .btn-group button').forEach(btn => {
+            btn.classList.remove('active');
+            // Bootstrap outline butonlar için özel temizlik
+            if (btn.classList.contains('btn-outline-primary')) {
+               // btn.classList.remove('active'); // Zaten yukarıda silindi
+            }
+        });
+        
+        // Strateji butonunu bul ve aktif yap
+        const stratBtn = document.getElementById(`btn-${currentStrategy}`);
+        if(stratBtn) stratBtn.classList.add('active');
+
+        // Range butonunu bul ve aktif yap
+        const rangeBtn = document.getElementById(`btn-range-${currentRange}`);
+        if(rangeBtn) rangeBtn.classList.add('active');
+    }
+
+    // --- 4. SAYFA YÜKLENDİĞİNDE ---
     document.addEventListener('DOMContentLoaded', function() {
-        // 1. POP-UP OTOMATİK AÇMA
+        // Pop-up Kontrolü
         {% if today_tasks %}
             if (!sessionStorage.getItem('todayTasksShown')) {
                 const todayModalElement = document.getElementById('todayTasksModal');
@@ -255,66 +519,22 @@
             }
         {% endif %}
 
-        // 2. GRAFİK ÇİZİMİ
+        // İlk Grafiği Çiz
         const labelsData = document.getElementById('chart-labels-data');
         const sourceData = document.getElementById('chart-data-source');
-
+        
         if (labelsData && sourceData) {
             const labels = JSON.parse(labelsData.textContent);
             const data = JSON.parse(sourceData.textContent);
-            const ctxCanvas = document.getElementById('workloadChart');
-
-            if (!labels || labels.length === 0) {
-                if (ctxCanvas && ctxCanvas.parentElement) {
-                    ctxCanvas.parentElement.innerHTML = `
-                        <div class="d-flex align-items-center justify-content-center h-100 text-muted">
-                            <p><i class="fas fa-info-circle me-2"></i>İş yükü grafiği için veri bulunamadı.</p>
-                        </div>`;
-                }
-                return;
+            
+            if (labels && labels.length > 0) {
+                initChart(labels, data);
+                // Butonların doğru görünmesi için stil güncellemesi
+                updateButtonStyles();
+            } else {
+                document.getElementById('workloadChart').parentElement.innerHTML = 
+                    '<div class="text-center text-muted py-5">Görüntülenecek veri bulunamadı.</div>';
             }
-
-            const ctx = ctxCanvas.getContext('2d');
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Günlük Planlanan Saat',
-                        data: data,
-                        backgroundColor: data.map(v => v > 8 ? 'rgba(255, 99, 132, 0.7)' : 'rgba(54, 162, 235, 0.6)'),
-                        borderColor: data.map(v => v > 8 ? 'rgb(255, 99, 132)' : 'rgb(54, 162, 235)'),
-                        borderWidth: 1.5,
-                        borderRadius: 5,
-                        barPercentage: 0.7
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return `Planlanan: ${context.raw} Saat`;
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        y: { 
-                            beginAtZero: true, 
-                            // OTO ÖLÇEK İÇİN SUGGESTED MAX KALDIRILDI
-                            title: { display: true, text: 'Saat / Gün' },
-                            grid: { color: '#f0f0f0' }
-                        },
-                        x: {
-                            grid: { display: false }
-                        }
-                    }
-                }
-            });
         }
     });
 </script>
